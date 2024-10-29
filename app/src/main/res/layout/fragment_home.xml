@@ -7,28 +7,39 @@
     tools:context=".ui.home.HomeFragment">
 
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:padding="16dp">
+		android:orientation="vertical"
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:padding="16dp">
 
-    <TextView
-        android:id="@+id/localIpTextView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Local IP: "
-        android:textSize="16sp" />
+		<EditText
+			android:id="@+id/portTextField"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:hint="Port number" />
 
-    <com.github.mikephil.charting.charts.LineChart
-        android:id="@+id/lineChart"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
+		<EditText
+			android:id="@+id/limitTextField"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:hint="Data limit" />
 
-    <LinearLayout
-        android:id="@+id/checkBoxContainer"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical" />
+		<Button
+			android:id="@+id/applyButton"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:text="Apply" />
+
+		<com.github.mikephil.charting.charts.LineChart
+			android:id="@+id/lineChart"
+			android:layout_width="match_parent"
+			android:layout_height="0dp"
+			android:layout_weight="1" />
+
+		<LinearLayout
+			android:id="@+id/checkBoxContainer"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:orientation="vertical" />
 	</LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -4,38 +4,32 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
-import com.example.chargercharts2.databinding.FragmentHomeBinding
-import com.github.mikephil.charting.charts.LineChart
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Observer
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
-import androidx.fragment.app.viewModels
-import androidx.lifecycle.Observer
+import com.example.chargercharts2.databinding.FragmentHomeBinding
 import android.widget.CheckBox
-import com.example.chargercharts2.ui.home.HomeViewModel
+import com.example.chargercharts2.utils.*
 
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
-    private var homeViewModel: HomeViewModel? = null
-    //private val homeViewModel: HomeViewModel by viewModels()
-    private val lineDataSets = mutableMapOf<String, LineDataSet>() // Store datasets by name
+    private val homeViewModel: HomeViewModel by viewModels()
+    private val dataSetsMap = mutableMapOf<String, LineDataSet>()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-
-        homeViewModel =
-            ViewModelProvider(this).get(HomeViewModel::class.java)
-
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         setupChart()
-        observeViewModel()
+        setupObservers()
+        setupConfiguration()
+
         return binding.root
     }
 
@@ -49,31 +43,34 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun observeViewModel() {
-        homeViewModel?.ipAddress?.observe(viewLifecycleOwner, Observer { ip ->
-            binding.localIpTextView.text = "Local IP: $ip"
-        })
-
-        homeViewModel?.voltageData?.observe(viewLifecycleOwner, Observer { dataSets ->
-            dataSets.forEach { (setName, dataList) ->
-                val lineDataSet = lineDataSets.getOrPut(setName) {
-                    val newDataSet = LineDataSet(mutableListOf(), setName).apply {
-                        color = resources.getColor(android.R.color.holo_blue_dark, null)
+    private fun setupObservers() {
+        homeViewModel.dataSets.observe(viewLifecycleOwner, Observer { dataSets ->
+            dataSets.forEach { (name, data) ->
+                val lineDataSet = dataSetsMap.getOrPut(name) {
+                    LineDataSet(mutableListOf(), name).apply {
                         lineWidth = 2f
+                    }.also {
+                        binding.lineChart.data.addDataSet(it)
+                        addCheckboxForDataSet(name)
                     }
-                    binding.lineChart.data.addDataSet(newDataSet)
-                    addCheckboxForDataSet(setName)
-                    newDataSet
                 }
 
                 lineDataSet.clear()
-                lineDataSet.values = dataList.map { (x, y) -> Entry(x, y) }
-
-                binding.lineChart.data.notifyDataChanged()
-                binding.lineChart.notifyDataSetChanged()
-                binding.lineChart.invalidate()
+                data.forEach { (x, y) -> lineDataSet.addEntry(Entry(x, y)) }
             }
+
+            binding.lineChart.data.notifyDataChanged()
+            binding.lineChart.notifyDataSetChanged()
+            binding.lineChart.invalidate()
         })
+    }
+
+    private fun setupConfiguration() {
+        binding.applyButton.setOnClickListener {
+            val port = binding.portTextField.text.toString().toIntOrNull() ?: 1985
+            val limit = binding.limitTextField.text.toString().toIntOrNull() ?: 50
+            UdpListener.initialize(port, limit)
+        }
     }
 
     private fun addCheckboxForDataSet(setName: String) {
@@ -81,7 +78,7 @@ class HomeFragment : Fragment() {
             text = setName
             isChecked = true
             setOnCheckedChangeListener { _, isChecked ->
-                lineDataSets[setName]?.isVisible = isChecked
+                dataSetsMap[setName]?.isVisible = isChecked
                 binding.lineChart.invalidate()
             }
         }
