@@ -5,5 +5,6 @@ import androidx.lifecycle.ViewModel
 import com.example.chargercharts2.utils.*
 
 class NotificationsViewModel : ViewModel() {
-    val messages: LiveData<String> = UdpListener.messages
+    val message: LiveData<String> = UdpListener.message
+    val messages: LiveData<List<String>> = UdpListener.messages
 }

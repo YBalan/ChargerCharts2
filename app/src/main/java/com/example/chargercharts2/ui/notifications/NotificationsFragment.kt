@@ -1,6 +1,7 @@
 package com.example.chargercharts2.ui.notifications
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -19,11 +20,21 @@ class NotificationsFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
+        Log.i("NotificationsFragment", "onCreateView")
         _binding = FragmentNotificationsBinding.inflate(inflater, container, false)
 
-        notificationViewModel.messages.observe(viewLifecycleOwner, Observer { message ->
+        notificationViewModel.message.observe(viewLifecycleOwner, Observer { message ->
             binding.messagesTextView.append("$message\n")
+
+            binding.messagesTextScrollView.post{
+                binding.messagesTextScrollView.fullScroll(View.FOCUS_DOWN)
+            }
         })
+
+        binding.messagesTextView.text = ""
+
+        for(message in notificationViewModel.messages.value?.toMutableList() ?: mutableListOf())
+            binding.messagesTextView.append("$message\n")
 
         return binding.root
     }
