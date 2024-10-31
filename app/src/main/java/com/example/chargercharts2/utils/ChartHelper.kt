@@ -1,6 +1,7 @@
 package com.example.chargercharts2.utils
 
 import android.content.Context
+import android.graphics.Color
 import com.github.mikephil.charting.components.MarkerView
 import com.github.mikephil.charting.data.*
 import com.github.mikephil.charting.charts.*
@@ -12,9 +13,12 @@ import java.util.Locale
 import com.example.chargercharts2.databinding.CustomMarkerViewBinding
 import com.github.mikephil.charting.formatter.ValueFormatter
 import android.view.LayoutInflater
+import com.example.chargercharts2.R
+import com.example.chargercharts2.models.CsvData
+import com.example.chargercharts2.models.chooseValueInt
 
 // Custom marker view class
-class CustomMarkerView(context: Context, layoutResource: Int, dateTimeFormat: String)
+class CustomMarkerView(context: Context?, layoutResource: Int, dateTimeFormat: String)
     : MarkerView(context, layoutResource) {
     //private val tvContent: TextView = findViewById(R.id.tvContent)
     //private val binding = CustomMarkerViewBinding.bind(this)
@@ -48,3 +52,21 @@ fun LineData?.isSetExistsByLabel(label: String, ignoreCase: Boolean = true) : Bo
     this ?: return false // Return false if LineData is null
     return this.getDataSetByLabel(label, ignoreCase) != null
 }
+
+fun setChartSettings(context: Context?, chart: LineChart){
+
+    //chart.setBackgroundColor(Color.WHITE)
+
+    chart.axisRight.textColor = Color.WHITE
+    chart.axisLeft.textColor = Color.WHITE
+
+    chart.xAxis.textColor = Color.WHITE
+    chart.legend.textColor = Color.WHITE
+
+    chart.xAxis.valueFormatter = CustomValueFormatter(CsvData.DATE_TIME_CHART_FORMAT)
+    val markerView = CustomMarkerView(context, R.layout.custom_marker_view, CsvData.DATE_TIME_TOOLTIP_FORMAT)
+    chart.marker = markerView
+    markerView.chartView = chart // For MPAndroidChart 3.0+
+}
+
+private fun Int.copy(alpha: Float) {}

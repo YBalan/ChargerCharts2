@@ -77,27 +77,18 @@ class HomeFragment : Fragment() {
 
     private fun setupChart() {
         binding.checkBoxContainer.removeAllViews()
+        dataSetsMap.clear()
+        binding.lineChart.clear()
         binding.lineChart.apply {
             data = LineData()
             //axisLeft.axisMinimum = 0f
             axisRight.isEnabled = true
             description.isEnabled = false
             xAxis.labelRotationAngle = 45f
-            //setBackgroundColor(Color.WHITE)
-
-            axisRight.textColor = Color.WHITE
-            axisLeft.textColor = Color.WHITE
-
-            xAxis.textColor = Color.WHITE
-            legend.textColor = Color.WHITE
-
             xAxis.granularity = 60F
             xAxis.isGranularityEnabled = true
 
-            xAxis.valueFormatter = CustomValueFormatter(CsvData.dateTimeChartFormat)
-            val markerView = CustomMarkerView(context, R.layout.custom_marker_view, CsvData.dateTimeToolTipFormat)
-            marker = markerView
-            //markerView.chartView = this // For MPAndroidChart 3.0+
+            setChartSettings(context, this)
         }
     }
 

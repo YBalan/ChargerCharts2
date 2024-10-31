@@ -41,7 +41,7 @@ object UdpListener {
 
     private val dataMap = mutableMapOf<String, MutableList<Pair<Float, Float>>>()
 
-    val dateTimeFormatter = DateTimeFormatter.ofPattern(CsvData.dateTimeCsvFormat)
+    val dateTimeFormatter = DateTimeFormatter.ofPattern(CsvData.DATE_TIME_CSV_FORMAT)
         .withResolverStyle(ResolverStyle.STRICT)
 
     private val _lastError = MutableLiveData<String>()
