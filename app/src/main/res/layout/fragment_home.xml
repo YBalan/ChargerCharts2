@@ -88,7 +88,7 @@
 			android:layout_height="wrap_content"
 			android:layout_gravity="start"
 			android:gravity="start"
-			android:orientation="horizontal"
+			android:orientation="vertical"
 			android:padding="34dp"
 			app:layout_constraintBottom_toBottomOf="parent"
 			app:layout_constraintEnd_toEndOf="parent"

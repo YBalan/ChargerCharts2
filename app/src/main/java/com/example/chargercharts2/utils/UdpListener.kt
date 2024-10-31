@@ -23,7 +23,7 @@ object UdpListener {
     private var random = Random
 
     private var port = 1985 // Default port; can be set by calling `initialize(port)`
-    private var isListening = false
+    var isListening = false
     private var dataLimit = 50
     private val messagesLimit = 500
     private var showErrorsInMessages : Boolean = true
@@ -50,6 +50,7 @@ object UdpListener {
     private var listeningJob: Job? = null
 
     fun initialize(newPort: Int, limit: Int, showErrorsInMessages: Boolean = true) {
+        clear()
         stopListening()
         port = newPort
         dataLimit = limit
@@ -111,8 +112,8 @@ object UdpListener {
 
                     Log.i("UdpListener", "dataList.size: ${dataList.size}")
                     if (dataList.size >= dataLimit) {
-                        dataList.removeAt(0)
-                        //removeAtForAllDataSets(0)
+                        //dataList.removeAt(0)
+                        removeAtForAllDataSets(0)
                     }
                     dataList.add(timestampFloat to voltageFloat)
 
@@ -159,6 +160,11 @@ object UdpListener {
         }
     }
 
+    fun clear(){
+        dataMap.clear()
+        _dataSets.postValue(dataMap)
+    }
+
     private fun closeTimer(){
         Log.i("UdpListener", "closeTimer")
         timer?.cancel()
@@ -184,21 +190,35 @@ object UdpListener {
 
             try {
                 val voltage1 = random.nextInt(10, 14).toFloat()
-                val name1 = "Test1"
+                val name1 = "ChargerCharts|28V|"
 
                 val voltage2 = random.nextInt(23, 28).toFloat()
-                val name2 = "Test2"
+                val name2 = "ChargerCharts|12.4V|"
+
+                val voltage3 = random.nextInt(16, 24).toFloat()
+                val name3 = "ChargerCharts|16.5V|"
+
+                val voltage4 = random.nextInt(8, 10).toFloat()
+                val name4 = "ChargerCharts|8.0V|"
+
                 // Create a message to send
                 val message1 = "$name1,$dateTime,$voltage1".toByteArray()
                 val message2 = "$name2,$dateTime,$voltage2".toByteArray()
+                val message3 = "$name3,$dateTime,$voltage3".toByteArray()
+                val message4 = "$name4,$dateTime,$voltage4".toByteArray()
 
                 // Create a DatagramPacket to send the message
                 val packet1 = DatagramPacket(message1, message1.size, address, port)
                 val packet2 = DatagramPacket(message2, message2.size, address, port)
+                val packet3 = DatagramPacket(message3, message3.size, address, port)
+                val packet4 = DatagramPacket(message4, message4.size, address, port)
 
                 // Send the packet
                 socket1.send(packet1)
                 socket2.send(packet2)
+
+                socket1.send(packet3)
+                socket2.send(packet4)
 
             }catch (e: Exception){
                 Log.e("UdpSender", "Error sending UDP packet", e)
