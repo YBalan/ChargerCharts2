@@ -20,14 +20,15 @@ import java.net.InetAddress
 import kotlin.random.Random
 
 object UdpListener {
-    val random = Random
-    var timer: Timer? = null
+    private var random = Random
+
     private var port = 1985 // Default port; can be set by calling `initialize(port)`
     private var isListening = false
     private var dataLimit = 50
     private val messagesLimit = 500
     private var showErrorsInMessages : Boolean = true
     private lateinit var socket: DatagramSocket
+    private var timer: Timer? = null
 
     private val _message = MutableLiveData<String>()
     val message: LiveData<String> get() = _message
@@ -53,7 +54,7 @@ object UdpListener {
         port = newPort
         dataLimit = limit
         this.showErrorsInMessages = showErrorsInMessages
-        Log.i("UdpListener", "Initialize")
+        Log.i("UdpListener", "Initialize: port: $port; dataLimit: $dataLimit")
 
         startListening()
 
@@ -64,6 +65,7 @@ object UdpListener {
     }
 
     private fun stopListening() {
+        Log.i("UdpListener", "stopListening")
         listeningJob?.cancel()  // This will cancel the coroutine if it is active
         listeningJob = null      // Optionally, clear the job reference
         closeTimer()
@@ -71,6 +73,7 @@ object UdpListener {
     }
 
     private fun startListening() {
+        Log.i("UdpListener", "startListening")
         listeningJob = CoroutineScope(Dispatchers.IO).launch {
             try {
                 socket = DatagramSocket(port)
@@ -95,8 +98,9 @@ object UdpListener {
                     val (setName, timestamp, voltage) = message.split(",").map { it.trim() }
                     val dataList = dataMap.getOrPut(setName) { mutableListOf() }
 
-                    val dateTime = try { LocalDateTime.parse(timestamp, dateTimeFormatter)
-                    }catch (e: DateTimeParseException) {
+                    val dateTime = try {
+                        LocalDateTime.parse(timestamp, dateTimeFormatter)
+                    } catch (e: DateTimeParseException) {
                         Log.e("UdpListener", "text: '$timestamp'", e)
                         postMessage(e.message, isError = true)
                         continue
@@ -106,7 +110,7 @@ object UdpListener {
                     val voltageFloat = voltage.toFloat()
 
                     Log.i("UdpListener", "dataList.size: ${dataList.size}")
-                    if (dataList.size >= dataLimit){
+                    if (dataList.size >= dataLimit) {
                         dataList.removeAt(0)
                         //removeAtForAllDataSets(0)
                     }
@@ -119,7 +123,7 @@ object UdpListener {
                 postMessage(e.message, isError = true)
             } finally {
                 isListening = false
-                if(!socket.isClosed)
+                if (!socket.isClosed)
                     socket.close()
                 closeTimer()
                 postMessage("Stopped")
@@ -156,6 +160,7 @@ object UdpListener {
     }
 
     private fun closeTimer(){
+        Log.i("UdpListener", "closeTimer")
         timer?.cancel()
         timer = null
     }
@@ -194,8 +199,13 @@ object UdpListener {
                 // Send the packet
                 socket1.send(packet1)
                 socket2.send(packet2)
+
             }catch (e: Exception){
                 Log.e("UdpSender", "Error sending UDP packet", e)
+            }
+            finally {
+                socket1.close()
+                socket2.close()
             }
         }
     }

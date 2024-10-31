@@ -1,5 +1,6 @@
 package com.example.chargercharts2.ui.home
 
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -17,6 +18,8 @@ import com.example.chargercharts2.R
 import com.example.chargercharts2.utils.*
 import com.example.chargercharts2.models.*
 import android.graphics.Color
+import androidx.core.graphics.alpha
+import androidx.core.view.children
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
@@ -59,12 +62,20 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupChart() {
+        binding.checkBoxContainer.removeAllViews()
         binding.lineChart.apply {
             data = LineData()
             //axisLeft.axisMinimum = 0f
-            axisRight.isEnabled = false
+            axisRight.isEnabled = true
             description.isEnabled = false
             xAxis.labelRotationAngle = 45f
+            //setBackgroundColor(Color.WHITE)
+
+            axisRight.textColor = Color.WHITE
+            axisLeft.textColor = Color.WHITE
+
+            xAxis.textColor = Color.WHITE
+            legend.textColor = Color.WHITE
 
             xAxis.valueFormatter = CustomValueFormatter(CsvData.dateTimeChartFormat)
             val markerView = CustomMarkerView(context, R.layout.custom_marker_view, CsvData.dateTimeToolTipFormat)
@@ -95,6 +106,7 @@ class HomeFragment : Fragment() {
                 lineDataSet.lineWidth = 3f
                 lineDataSet.color = getColor(idx)
                 lineDataSet.setCircleColor(getColor(idx))
+                //lineDataSet.valueTextColor = Color.WHITE
                 data.toList().forEach { (x, y) -> lineDataSet.addEntry(Entry(x, y)) }
 
                 if(!binding.lineChart.data.isSetExistsByLabel(name, true)){
@@ -120,7 +132,7 @@ class HomeFragment : Fragment() {
             val port = binding.portTextField.text.toString().toIntOrNull() ?: 1985
             val limit = binding.limitTextField.text.toString().toIntOrNull() ?: 50
             UdpListener.initialize(port, limit)
-            //setupChart()
+            setupChart()
             fillChart(homeViewModel.dataSets.value)
             invalidateChart()
         }
@@ -130,7 +142,8 @@ class HomeFragment : Fragment() {
         Log.i("HomeFragment", "addCheckboxForDataSet: $setName")
         val checkBox = CheckBox(context).apply {
             text = setName
-            isChecked = true
+            isChecked = dataSetsMap[setName]?.isVisible != false
+            buttonTintList = ColorStateList.valueOf(dataSetsMap[setName]?.color ?: buttonTintList!!.defaultColor)
             setOnCheckedChangeListener { _, isChecked ->
                 dataSetsMap[setName]?.isVisible = isChecked
                 binding.lineChart.invalidate()

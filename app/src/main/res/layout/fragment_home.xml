@@ -7,80 +7,95 @@
     android:layout_height="match_parent"
     tools:context=".ui.home.HomeFragment">
 
-    <LinearLayout
-        android:orientation="vertical"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="16dp">
+	<LinearLayout
+		android:layout_width="match_parent"
+		android:layout_height="match_parent"
+		android:layout_marginBottom="32dp"
+		android:orientation="vertical"
+		android:padding="16dp"
+		app:layout_constraintBottom_toBottomOf="parent"
+		app:layout_constraintEnd_toEndOf="parent"
+		app:layout_constraintStart_toStartOf="parent"
+		app:layout_constraintTop_toTopOf="parent">
 
-        <!-- Horizontal layout for port, limit, and apply button -->
-        <LinearLayout
-            android:orientation="horizontal"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="8dp">
+		<!-- Horizontal layout for port, limit, and apply button -->
+		<LinearLayout
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_marginBottom="8dp"
+			android:gravity="center_vertical"
+			android:orientation="horizontal">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Port:"
-                android:textSize="16sp"
-                android:layout_marginEnd="8dp"/> <!-- Margin for spacing -->
-
-            <EditText
-                android:id="@+id/portTextField"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:hint="Port number"
-                android:text="1985"
-                android:maxLength="5"				
-                android:inputType="number"/> <!-- Numeric input only -->
-				
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Limit:"
-                android:textSize="16sp"
-                android:layout_marginStart="16dp"
-                android:layout_marginEnd="8dp"/> <!-- Margin for spacing -->
-
-            <EditText
-                android:id="@+id/limitTextField"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:hint="Data limit"
-                android:text="100"
-                android:maxLength="3"
-                android:inputType="number"/> <!-- Numeric input only -->
-
-            <Button
-                android:id="@+id/applyButton"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="GO" />        
-		</LinearLayout>
-		
-		 
-			
-			<com.github.mikephil.charting.charts.LineChart
-				android:id="@+id/lineChart"
-				android:layout_width="match_parent"
-				android:layout_height="0dp"
-				android:layout_weight="1"/>
-			
-			
-			<LinearLayout
-				android:id="@+id/checkBoxContainer"
-				android:layout_width="match_parent"
+			<TextView
+				android:layout_width="wrap_content"
 				android:layout_height="wrap_content"
-				android:orientation="vertical" />
-		
-			
+				android:layout_marginEnd="8dp"
+				android:text="Port:"
+				android:textSize="16sp" /> <!-- Margin for spacing -->
+
+			<EditText
+				android:id="@+id/portTextField"
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:layout_weight="1"
+				android:hint="Port number"
+				android:inputType="number"
+				android:maxLength="5"
+				android:text="1985" /> <!-- Numeric input only -->
+
+
+			<TextView
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_marginStart="16dp"
+				android:layout_marginEnd="8dp"
+				android:text="Limit:"
+				android:textSize="16sp" /> <!-- Margin for spacing -->
+
+			<EditText
+				android:id="@+id/limitTextField"
+				android:layout_width="0dp"
+				android:layout_height="wrap_content"
+				android:layout_weight="1"
+				android:hint="Data limit"
+				android:inputType="number"
+				android:maxLength="3"
+				android:text="100" /> <!-- Numeric input only -->
+
+			<Button
+				android:id="@+id/applyButton"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_marginStart="8dp"
+				android:text="GO" />
+		</LinearLayout>
+
+
+		<com.github.mikephil.charting.charts.LineChart
+			android:id="@+id/lineChart"
+			android:layout_width="match_parent"
+			android:layout_height="0dp"
+			android:layout_weight="1"
+			app:layout_constraintBottom_toBottomOf="parent"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toTopOf="parent" />
+
+
+		<LinearLayout
+			android:id="@+id/checkBoxContainer"
+			android:layout_width="match_parent"
+			android:layout_height="wrap_content"
+			android:layout_gravity="start"
+			android:gravity="start"
+			android:orientation="horizontal"
+			android:padding="34dp"
+			app:layout_constraintBottom_toBottomOf="parent"
+			app:layout_constraintEnd_toEndOf="parent"
+			app:layout_constraintStart_toStartOf="parent"
+			app:layout_constraintTop_toTopOf="parent" />
+
+
 	</LinearLayout>
 		
 </androidx.constraintlayout.widget.ConstraintLayout>
