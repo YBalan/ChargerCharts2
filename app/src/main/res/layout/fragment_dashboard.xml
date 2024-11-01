@@ -60,6 +60,14 @@
             android:text="Relay"
             android:layout_marginStart="16dp"
             android:checked="true" />
+		<!-- CheckBox for Relay data set -->
+        <CheckBox
+            android:id="@+id/ignoreZeroCheckBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="'0'"
+            android:layout_marginStart="16dp"
+            android:checked="true" />
     </LinearLayout>
 
     <!-- LineChart for displaying CSV data -->

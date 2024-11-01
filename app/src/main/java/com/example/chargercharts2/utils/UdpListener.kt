@@ -87,12 +87,13 @@ object UdpListener {
         listeningJob = CoroutineScope(Dispatchers.IO).launch {
             try {
                 socket = DatagramSocket(_port)
+
                 val buffer = ByteArray(1024)
                 val packet = DatagramPacket(buffer, buffer.size)
                 _isListening = true
 
                 var ip = getLocalIpAddress()
-                var port = socket.localPort
+                var port = socket?.localPort
                 Log.i("UdpListener", "Started")
                 postMessage("Started at: $ip:$port...")
 
@@ -172,7 +173,7 @@ object UdpListener {
 
     fun clear(){
         dataMap.clear()
-        _dataSets.postValue(dataMap)
+        //_dataSets.postValue(dataMap)
     }
 
     private fun closeTimer(){

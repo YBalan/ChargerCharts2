@@ -9,4 +9,8 @@ class HomeViewModel : ViewModel() {
     val dataSets: LiveData<Map<String, List<Pair<Float, Float>>>> = UdpListener.dataSets
     val removedEntry : LiveData<Pair<Float, Float>> = UdpListener.removedEntry
     val dataSetsMap = mutableMapOf<String, LineDataSet>()
+
+    fun clear(){
+        dataSetsMap.clear()
+    }
 }

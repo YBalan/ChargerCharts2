@@ -58,7 +58,7 @@ class HomeFragment : Fragment() {
         setupChart()
         fillChart(homeViewModel.dataSets.value)
         setupObservers()
-        setupSettings()
+        setupSettingsAndApplyButton()
     }
 
     private fun updateCheckBoxContainerOrientation() {
@@ -134,7 +134,7 @@ class HomeFragment : Fragment() {
         binding.lineChart.invalidate()
     }
 
-    private fun setupSettings() {
+    private fun setupSettingsAndApplyButton() {
         //binding.portTextField.setText(UdpListener.DEFAULT_PORT)
         //binding.limitTextField.setText(UdpListener.DEFAULT_DATA_LIMIT)
 
@@ -142,6 +142,8 @@ class HomeFragment : Fragment() {
             val port = binding.portTextField.text.toString().toIntOrNull() ?: UdpListener.port
             val dataLimit = binding.limitTextField.text.toString().toIntOrNull() ?: UdpListener.dataLimit
             UdpListener.initialize(port, dataLimit)
+            UdpListener.clear()
+            homeViewModel.clear()
             setupChart()
             fillChart(homeViewModel.dataSets.value)
             invalidateChart()

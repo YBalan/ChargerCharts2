@@ -122,18 +122,23 @@ fun readHeader(value: String) : String?{
     return result
 }
 
-fun plotCsvData(context: Context?, chart: LineChart, data: CsvData, isDarkTheme: Boolean) : Boolean {
+fun plotCsvData(context: Context?, chart: LineChart, data: CsvData, ignoreZeros: Boolean, isDarkTheme: Boolean) : Boolean {
     if(data.values.isEmpty()) return false
 
-    val voltage = data.values.map { csvData ->
-        Entry(csvData.dateTime.toEpoch().toFloat(), csvData.voltage) // X = epoch millis, Y = voltage
-    }
-
     val relayOffset = 0.1f
-    val relay = data.values.map { csvData ->
-        Entry(csvData.dateTime.toEpoch().toFloat(),
-            chooseValue(csvData.relay > 0.0f, data.maxV + relayOffset,
-                chooseValue(data.minV - relayOffset > 0f, data.minV - relayOffset, 0f))) // X = epoch millis, Y = relay
+
+    val voltage = mutableListOf<Entry>()
+    val relay = mutableListOf<Entry>()
+
+    data.values.forEach { csvData ->
+        if(!ignoreZeros || csvData.voltage > 0f) {
+            val dt = csvData.dateTime.toEpoch().toFloat()
+            voltage.add(Entry(dt, csvData.voltage))
+
+            relay.add(Entry(dt,
+                chooseValue(csvData.relay > 0.0f, data.maxV + relayOffset,
+                    chooseValue(data.minV - relayOffset > 0f, data.minV - relayOffset, 0f))))
+        }
     }
 
     val dataSetVoltage = LineDataSet(voltage, data.voltageLabel)

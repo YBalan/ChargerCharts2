@@ -50,6 +50,11 @@ class DashboardFragment : Fragment() {
         viewModel.fileName.observe(viewLifecycleOwner){ fileName ->
             binding.fileNameTextView.text = fileName
         }
+
+        binding.ignoreZeroCheckBox.setOnCheckedChangeListener { _, isChecked ->
+            plotCsvChart(viewModel.csvChartData.value)
+            binding.lineChart.invalidate()
+        }
     }
 
     private fun openFilePicker() {
@@ -85,7 +90,7 @@ class DashboardFragment : Fragment() {
             return
         }
 
-        if(plotCsvData(context, binding.lineChart, csvData, isDarkTheme())){
+        if(plotCsvData(context, binding.lineChart, csvData, !binding.ignoreZeroCheckBox.isChecked, isDarkTheme())){
             updateControls(isChartView = true)
             setCheckBoxColorFromDataSet(binding.voltageCheckBox, csvData.voltageLabel)
             setCheckBoxColorFromDataSet(binding.relayCheckBox, csvData.relayLabel)
