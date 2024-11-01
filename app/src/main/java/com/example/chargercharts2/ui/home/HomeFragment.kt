@@ -17,7 +17,6 @@ import com.example.chargercharts2.databinding.FragmentHomeBinding
 import android.widget.CheckBox
 import com.example.chargercharts2.R
 import com.example.chargercharts2.utils.*
-import com.example.chargercharts2.models.*
 import android.graphics.Color
 import android.widget.LinearLayout
 
@@ -77,7 +76,7 @@ class HomeFragment : Fragment() {
 
     private fun setupChart() {
         binding.checkBoxContainer.removeAllViews()
-        dataSetsMap.clear()
+
         binding.lineChart.clear()
         binding.lineChart.apply {
             data = LineData()
@@ -88,7 +87,7 @@ class HomeFragment : Fragment() {
             xAxis.granularity = 60F
             xAxis.isGranularityEnabled = true
 
-            setChartSettings(context, this)
+            setChartSettings(context, this, isDarkTheme())
         }
     }
 
@@ -99,6 +98,11 @@ class HomeFragment : Fragment() {
     private fun setupObservers() {
         homeViewModel.dataSets.observe(viewLifecycleOwner, Observer { dataSets ->
             fillChart(dataSets)
+            invalidateChart()
+        })
+
+        homeViewModel.removedEntry.observe(viewLifecycleOwner, Observer { entry ->
+            binding.lineChart.data?.dataSets?.forEach{ ds-> ds.removeEntryByXValue(entry.first) }
             invalidateChart()
         })
     }
@@ -124,7 +128,7 @@ class HomeFragment : Fragment() {
             }
         }catch(e: Exception){
             Log.e("HomeFragment", "dataSets?.toList()?.forEachIndexed", e)
-            throw e
+            //throw e
         }
     }
 
@@ -136,10 +140,13 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupSettings() {
+        //binding.portTextField.setText(UdpListener.DEFAULT_PORT)
+        //binding.limitTextField.setText(UdpListener.DEFAULT_DATA_LIMIT)
+
         binding.applyButton.setOnClickListener {
-            val port = binding.portTextField.text.toString().toIntOrNull() ?: 1985
-            val limit = binding.limitTextField.text.toString().toIntOrNull() ?: 50
-            UdpListener.initialize(port, limit)
+            val port = binding.portTextField.text.toString().toIntOrNull() ?: UdpListener.port
+            val dataLimit = binding.limitTextField.text.toString().toIntOrNull() ?: UdpListener.dataLimit
+            UdpListener.initialize(port, dataLimit)
             setupChart()
             fillChart(homeViewModel.dataSets.value)
             invalidateChart()
@@ -166,7 +173,7 @@ class HomeFragment : Fragment() {
         val checkBox = CheckBox(context).apply {
             text = setName
             isChecked = dataSetsMap[setName]?.isVisible != false
-            buttonTintList = ColorStateList.valueOf(dataSetsMap[setName]?.color ?: Color.WHITE)
+            buttonTintList = ColorStateList.valueOf(dataSetsMap[setName]?.color ?: buttonTintList!!.defaultColor)
             setOnCheckedChangeListener { _, isChecked ->
                 dataSetsMap[setName]?.isVisible = isChecked
                 binding.lineChart.invalidate()

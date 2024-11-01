@@ -11,15 +11,13 @@ import android.widget.CheckBox
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.view.allViews
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.example.chargercharts2.databinding.FragmentDashboardBinding // Adjust with actual binding class
 import com.example.chargercharts2.models.CsvData
-import com.example.chargercharts2.models.chooseValue
-import com.example.chargercharts2.models.chooseValueInt
 import com.example.chargercharts2.models.plotCsvData
-import com.example.chargercharts2.utils.getFileNameFromUri
+import com.example.chargercharts2.utils.chooseValue
+import com.example.chargercharts2.utils.isDarkTheme
 
 class DashboardFragment : Fragment() {
 
@@ -87,7 +85,7 @@ class DashboardFragment : Fragment() {
             return
         }
 
-        if(plotCsvData(context, binding.lineChart, csvData)){
+        if(plotCsvData(context, binding.lineChart, csvData, isDarkTheme())){
             updateControls(isChartView = true)
             setCheckBoxColorFromDataSet(binding.voltageCheckBox, csvData.voltageLabel)
             setCheckBoxColorFromDataSet(binding.relayCheckBox, csvData.relayLabel)
@@ -123,13 +121,13 @@ class DashboardFragment : Fragment() {
     }
 
     private fun updateControls(isChartView: Boolean) {
-        binding.lineChart.visibility = chooseValueInt(isChartView, View.VISIBLE, View.GONE)
-        binding.fileNameTextView.visibility = chooseValueInt(isChartView, View.VISIBLE, View.GONE)
-        binding.checkBoxContainer.visibility = chooseValueInt(isChartView, View.VISIBLE, View.GONE)
+        binding.lineChart.visibility = chooseValue(isChartView, View.VISIBLE, View.GONE)
+        binding.fileNameTextView.visibility = chooseValue(isChartView, View.VISIBLE, View.GONE)
+        binding.checkBoxContainer.visibility = chooseValue(isChartView, View.VISIBLE, View.GONE)
         /*binding.checkBoxContainer.allViews.toList().forEach{
             view -> view.visibility = chooseValueInt(isChartView, View.VISIBLE, View.GONE) }*/
 
-        binding.pickFileButton.visibility = chooseValueInt(isChartView, View.GONE, View.VISIBLE)
+        binding.pickFileButton.visibility = chooseValue(isChartView, View.GONE, View.VISIBLE)
     }
 
     override fun onDestroyView() {

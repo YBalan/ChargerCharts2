@@ -20,15 +20,23 @@ import java.net.InetAddress
 import kotlin.random.Random
 
 object UdpListener {
+    const val DEFAULT_PORT = 1985
+    const val DEFAULT_DATA_LIMIT = 120
+
     private var random = Random
 
-    private var port = 1985 // Default port; can be set by calling `initialize(port)`
-    var isListening = false
-    private var dataLimit = 50
-    private val messagesLimit = 500
+    private var _port = DEFAULT_PORT // Default port; can be set by calling `initialize(port)`
+    val port: Int get() = _port
+    private var _isListening = false
+    val isListening: Boolean get() = _isListening
+    private var _dataLimit = DEFAULT_DATA_LIMIT
+    val dataLimit: Int get() = _dataLimit
+
+    private const val LOGS_LIMIT = 500
     private var showErrorsInMessages : Boolean = true
     private lateinit var socket: DatagramSocket
     private var timer: Timer? = null
+    private var listeningJob: Job? = null
 
     private val _message = MutableLiveData<String>()
     val message: LiveData<String> get() = _message
@@ -41,21 +49,22 @@ object UdpListener {
 
     private val dataMap = mutableMapOf<String, MutableList<Pair<Float, Float>>>()
 
-    val dateTimeFormatter = DateTimeFormatter.ofPattern(CsvData.DATE_TIME_CSV_FORMAT)
-        .withResolverStyle(ResolverStyle.STRICT)
+    private val _removedEntry = MutableLiveData<Pair<Float, Float>>()
+    val removedEntry: LiveData<Pair<Float, Float>> get() = _removedEntry
 
     private val _lastError = MutableLiveData<String>()
-    val lastError: LiveData<String> get() = _lastError
+    //val lastError: LiveData<String> get() = _lastError
 
-    private var listeningJob: Job? = null
+    val dateTimeFormatter = DateTimeFormatter.ofPattern(CsvData.DATE_TIME_CSV_FORMAT)
+        .withResolverStyle(ResolverStyle.STRICT)
 
     fun initialize(newPort: Int, limit: Int, showErrorsInMessages: Boolean = true) {
         clear()
         stopListening()
-        port = newPort
-        dataLimit = limit
+        _port = newPort
+        _dataLimit = limit
         this.showErrorsInMessages = showErrorsInMessages
-        Log.i("UdpListener", "Initialize: port: $port; dataLimit: $dataLimit")
+        Log.i("UdpListener", "Initialize: port: $_port; dataLimit: $_dataLimit")
 
         startListening()
 
@@ -70,24 +79,24 @@ object UdpListener {
         listeningJob?.cancel()  // This will cancel the coroutine if it is active
         listeningJob = null      // Optionally, clear the job reference
         closeTimer()
-        isListening = false
+        _isListening = false
     }
 
     private fun startListening() {
         Log.i("UdpListener", "startListening")
         listeningJob = CoroutineScope(Dispatchers.IO).launch {
             try {
-                socket = DatagramSocket(port)
+                socket = DatagramSocket(_port)
                 val buffer = ByteArray(1024)
                 val packet = DatagramPacket(buffer, buffer.size)
-                isListening = true
+                _isListening = true
 
                 var ip = getLocalIpAddress()
                 var port = socket.localPort
                 Log.i("UdpListener", "Started")
                 postMessage("Started at: $ip:$port...")
 
-                while (isListening && !socket.isClosed) {
+                while (_isListening && !socket.isClosed) {
                     socket.receive(packet)
                     Log.i("UdpListener", "received")
                     val message = String(packet.data, 0, packet.length)
@@ -111,7 +120,7 @@ object UdpListener {
                     val voltageFloat = voltage.toFloat()
 
                     Log.i("UdpListener", "dataList.size: ${dataList.size}")
-                    if (dataList.size >= dataLimit) {
+                    if (dataList.size >= _dataLimit) {
                         //dataList.removeAt(0)
                         removeAtForAllDataSets(0)
                     }
@@ -123,7 +132,7 @@ object UdpListener {
                 Log.e("UdpListener", "Error receiving UDP packet", e)
                 postMessage(e.message, isError = true)
             } finally {
-                isListening = false
+                _isListening = false
                 if (!socket.isClosed)
                     socket.close()
                 closeTimer()
@@ -133,7 +142,7 @@ object UdpListener {
         }
     }
 
-    private fun postMessage(message: String?, isError: Boolean = false, addNumber: Boolean = true){
+    private fun postMessage(message: String?, isError: Boolean = false, addNumber: Boolean = false){
         Log.i("UdpListener", "postMessage")
         if (message.isNullOrEmpty()) return
         var msg: String = if(addNumber) "${(_messages.value?.size ?: 0) + 1}$message"
@@ -141,7 +150,7 @@ object UdpListener {
         if(!isError || showErrorsInMessages) {
             _message.postValue(msg)
             val updatedList = _messages.value?.toMutableList() ?: mutableListOf()
-            if(updatedList.size >= messagesLimit) updatedList.removeAt(0)
+            if(updatedList.size >= LOGS_LIMIT) updatedList.removeAt(0)
             updatedList.add(msg)
             _messages.postValue(updatedList)
         }
@@ -155,7 +164,8 @@ object UdpListener {
         for (mapEntry in dataMap){
             if(mapEntry.value.isNotEmpty() && idx < mapEntry.value.size) {
                 Log.i("UdpListener", "removeAt: ${mapEntry.key}")
-                mapEntry.value.removeAt(idx)
+                val entry = mapEntry.value.removeAt(idx)
+                _removedEntry.postValue(entry)
             }
         }
     }
@@ -176,7 +186,7 @@ object UdpListener {
         // Schedule a task to run every minute (60000 milliseconds)
         closeTimer()
         timer = Timer()
-        timer?.schedule(0, 1000) {
+        timer?.schedule(0, 5000) {
 
             val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
             val localDateTime = LocalDateTime.now()
@@ -208,10 +218,10 @@ object UdpListener {
                 val message4 = "$name4,$dateTime,$voltage4".toByteArray()
 
                 // Create a DatagramPacket to send the message
-                val packet1 = DatagramPacket(message1, message1.size, address, port)
-                val packet2 = DatagramPacket(message2, message2.size, address, port)
-                val packet3 = DatagramPacket(message3, message3.size, address, port)
-                val packet4 = DatagramPacket(message4, message4.size, address, port)
+                val packet1 = DatagramPacket(message1, message1.size, address, _port)
+                val packet2 = DatagramPacket(message2, message2.size, address, _port)
+                val packet3 = DatagramPacket(message3, message3.size, address, _port)
+                val packet4 = DatagramPacket(message4, message4.size, address, _port)
 
                 // Send the packet
                 socket1.send(packet1)

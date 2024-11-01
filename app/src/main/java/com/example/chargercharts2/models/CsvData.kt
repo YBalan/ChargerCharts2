@@ -4,9 +4,7 @@ import android.content.Context
 import android.graphics.Color
 import android.net.Uri
 import android.util.Log
-import com.example.chargercharts2.R
-import com.example.chargercharts2.utils.CustomMarkerView
-import com.example.chargercharts2.utils.getDateTime
+import com.example.chargercharts2.utils.chooseValue
 import com.example.chargercharts2.utils.setChartSettings
 import com.example.chargercharts2.utils.toEpoch
 import com.github.mikephil.charting.charts.LineChart
@@ -14,7 +12,6 @@ import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
-import com.github.mikephil.charting.formatter.ValueFormatter
 import com.opencsv.CSVReader
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -44,14 +41,6 @@ data class CsvDataValue(
     val voltage: Float,
     val relay: Float,
 )
-
-val chooseValue: (Boolean, Float, Float) -> Float = { condition, trueValue, falseValue ->
-    if (condition) trueValue else falseValue
-}
-
-val chooseValueInt: (Boolean, Int, Int) -> Int = { condition, trueValue, falseValue ->
-    if (condition) trueValue else falseValue
-}
 
 fun parseCsvFile(context: Context, uri: Uri): CsvData {
     val resultList = mutableListOf<CsvDataValue>()
@@ -133,7 +122,7 @@ fun readHeader(value: String) : String?{
     return result
 }
 
-fun plotCsvData(context: Context?, chart: LineChart, data: CsvData) : Boolean {
+fun plotCsvData(context: Context?, chart: LineChart, data: CsvData, isDarkTheme: Boolean) : Boolean {
     if(data.values.isEmpty()) return false
 
     val voltage = data.values.map { csvData ->
@@ -176,7 +165,7 @@ fun plotCsvData(context: Context?, chart: LineChart, data: CsvData) : Boolean {
     chart.data = lineData
     chart.description.isEnabled = false
 
-    setChartSettings(context, chart)
+    setChartSettings(context, chart, isDarkTheme)
 
     chart.invalidate() // Refresh the chart
 
