@@ -19,6 +19,7 @@ import com.example.chargercharts2.R
 import com.example.chargercharts2.utils.*
 import android.graphics.Color
 import android.widget.LinearLayout
+import com.example.chargercharts2.BuildConfig.IS_DEBUG_BUILD
 
 class HomeFragment : Fragment() {
 
@@ -36,7 +37,8 @@ class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
     private val homeViewModel: HomeViewModel by viewModels()
-    private val dataSetsMap = mutableMapOf<String, LineDataSet>()
+
+    private val dataSetsMap get() = homeViewModel.dataSetsMap
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -44,13 +46,6 @@ class HomeFragment : Fragment() {
     ): View {
         Log.i("HomeFragment", "onCreateView")
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
-
-        /*setupChart()
-        fillChart(homeViewModel.dataSets.value)
-        setupObservers()
-        setupSettings()
-        updateSettings()
-        */
 
         return binding.root
     }
@@ -128,7 +123,7 @@ class HomeFragment : Fragment() {
             }
         }catch(e: Exception){
             Log.e("HomeFragment", "dataSets?.toList()?.forEachIndexed", e)
-            //throw e
+            if (IS_DEBUG_BUILD) { throw e }
         }
     }
 
@@ -169,17 +164,20 @@ class HomeFragment : Fragment() {
     }
 
     private fun addCheckboxForDataSet(setName: String) {
-        Log.i("HomeFragment", "addCheckboxForDataSet: $setName")
-        val checkBox = CheckBox(context).apply {
-            text = setName
-            isChecked = dataSetsMap[setName]?.isVisible != false
-            buttonTintList = ColorStateList.valueOf(dataSetsMap[setName]?.color ?: buttonTintList!!.defaultColor)
-            setOnCheckedChangeListener { _, isChecked ->
-                dataSetsMap[setName]?.isVisible = isChecked
-                binding.lineChart.invalidate()
+        val dataSet = dataSetsMap[setName]
+        Log.i("HomeFragment", "addCheckboxForDataSet: $setName isVisible: ${dataSet?.isVisible}")
+        if(dataSet != null) {
+            val checkBox = CheckBox(context).apply {
+                text = setName
+                isChecked = dataSet.isVisible
+                buttonTintList = ColorStateList.valueOf(dataSet.color)
+                setOnCheckedChangeListener { _, isChecked ->
+                    dataSet.isVisible = isChecked
+                    binding.lineChart.invalidate()
+                }
             }
+            binding.checkBoxContainer.addView(checkBox)
         }
-        binding.checkBoxContainer.addView(checkBox)
     }
 
     override fun onDestroyView() {
