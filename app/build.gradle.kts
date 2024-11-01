@@ -43,7 +43,7 @@ android {
             this as com.android.build.gradle.internal.api.ApkVariantOutputImpl
 
             val buildName = buildType.name
-            val appName = "ChargerCharts2"
+            val appName = rootProject.name
             val apkName = "${appName}_v${defaultConfig.versionName}.${defaultConfig.versionCode}_${buildName}.apk"
 
             outputFileName = apkName
@@ -77,8 +77,8 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
 
     // MPAndroidChart dependency for charting
-    implementation("com.github.PhilJay:MPAndroidChart:v3.1.0")
+    implementation(libs.mpandroidchart)
 
     // OpenCSV dependency for parsing CSV files
-    implementation("com.opencsv:opencsv:5.5.2")
+    implementation(libs.opencsv)
 }
