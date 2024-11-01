@@ -37,7 +37,8 @@ class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
     private val homeViewModel: HomeViewModel by viewModels()
-    private val dataSetsMap = mutableMapOf<String, LineDataSet>()
+
+    private val dataSetsMap get() = homeViewModel.dataSetsMap
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
