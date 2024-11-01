@@ -1,38 +1,42 @@
 package com.example.chargercharts2.ui.notifications
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.ViewModelProvider
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Observer
 import com.example.chargercharts2.databinding.FragmentNotificationsBinding
 
 class NotificationsFragment : Fragment() {
 
     private var _binding: FragmentNotificationsBinding? = null
-
-    // This property is only valid between onCreateView and
-    // onDestroyView.
     private val binding get() = _binding!!
+    private val notificationViewModel: NotificationsViewModel by viewModels()
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
+        inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val notificationsViewModel =
-            ViewModelProvider(this).get(NotificationsViewModel::class.java)
-
+        Log.i("NotificationsFragment", "onCreateView")
         _binding = FragmentNotificationsBinding.inflate(inflater, container, false)
-        val root: View = binding.root
 
-        val textView: TextView = binding.textNotifications
-        notificationsViewModel.text.observe(viewLifecycleOwner) {
-            textView.text = it
-        }
-        return root
+        notificationViewModel.message.observe(viewLifecycleOwner, Observer { message ->
+            binding.messagesTextView.append("$message\n")
+
+            binding.messagesTextScrollView.post{
+                binding.messagesTextScrollView.fullScroll(View.FOCUS_DOWN)
+            }
+        })
+
+        binding.messagesTextView.text = ""
+
+        for(message in notificationViewModel.messages.value?.toMutableList() ?: mutableListOf())
+            binding.messagesTextView.append("$message\n")
+
+        return binding.root
     }
 
     override fun onDestroyView() {
