@@ -124,9 +124,6 @@ class DashboardFragment : Fragment() {
         binding.lineChart.visibility = chooseValue(isChartView, View.VISIBLE, View.GONE)
         binding.fileNameTextView.visibility = chooseValue(isChartView, View.VISIBLE, View.GONE)
         binding.checkBoxContainer.visibility = chooseValue(isChartView, View.VISIBLE, View.GONE)
-        /*binding.checkBoxContainer.allViews.toList().forEach{
-            view -> view.visibility = chooseValueInt(isChartView, View.VISIBLE, View.GONE) }*/
-
         binding.pickFileButton.visibility = chooseValue(isChartView, View.GONE, View.VISIBLE)
     }
 

@@ -17,15 +17,39 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
+    // Enable buildConfig generation
+    android{
+    buildFeatures {
+        buildConfig = true
+    }}
+
     buildTypes {
+        debug{
+            isDebuggable = true
+            buildConfigField("Boolean", "IS_DEBUG_BUILD", "true")
+        }
         release {
             isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            buildConfigField("Boolean", "IS_DEBUG_BUILD", "false")
         }
     }
+
+    applicationVariants.all {
+        outputs.all {
+            this as com.android.build.gradle.internal.api.ApkVariantOutputImpl
+
+            val buildName = buildType.name
+            val appName = "ChargerCharts2"
+            val apkName = "${appName}_v${defaultConfig.versionName}.${defaultConfig.versionCode}_${buildName}.apk"
+
+            outputFileName = apkName
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
