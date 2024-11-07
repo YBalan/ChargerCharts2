@@ -20,6 +20,7 @@ import com.example.chargercharts2.utils.*
 import android.graphics.Color
 import android.widget.LinearLayout
 import com.example.chargercharts2.BuildConfig.IS_DEBUG_BUILD
+import com.github.mikephil.charting.charts.LineChart
 
 class HomeFragment : Fragment() {
 
@@ -114,11 +115,14 @@ class HomeFragment : Fragment() {
                 lineDataSet.color = getColor(idx)
                 lineDataSet.setCircleColor(getColor(idx))
                 lineDataSet.valueTextColor = Color.WHITE
-                data.toList().forEach { (x, y) -> lineDataSet.addEntry(Entry(x, y)) }
+
+                if(lineDataSet.isVisible){
+                    data.toList().forEach { (x, y) -> lineDataSet.addEntry(Entry(x, y)) }
+                }
 
                 if(!binding.lineChart.data.isSetExistsByLabel(name, true)){
                     binding.lineChart.data?.addDataSet(lineDataSet)
-                    addCheckboxForDataSet(name)
+                    addCheckboxForDataSet(name, binding.lineChart)
                 }
             }
         }catch(e: Exception){
@@ -165,7 +169,7 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun addCheckboxForDataSet(setName: String) {
+    private fun addCheckboxForDataSet(setName: String, chart: LineChart) {
         val dataSet = dataSetsMap[setName]
         Log.i("HomeFragment", "addCheckboxForDataSet: $setName isVisible: ${dataSet?.isVisible}")
         if(dataSet != null) {
@@ -175,7 +179,18 @@ class HomeFragment : Fragment() {
                 buttonTintList = ColorStateList.valueOf(dataSet.color)
                 setOnCheckedChangeListener { _, isChecked ->
                     dataSet.isVisible = isChecked
-                    binding.lineChart.invalidate()
+                    if(!isChecked){
+                        dataSet.clear()
+                        chart.axisLeft.resetAxisMaximum()
+                        chart.axisLeft.resetAxisMinimum()
+
+                        chart.axisRight.resetAxisMaximum()
+                        chart.axisRight.resetAxisMinimum()
+                    }
+
+                    fillChart(homeViewModel.dataSets.value)
+
+                    invalidateChart()
                 }
             }
             binding.checkBoxContainer.addView(checkBox)

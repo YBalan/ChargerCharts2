@@ -72,6 +72,8 @@ fun setChartSettings(context: Context?, chart: LineChart, isDarkTheme: Boolean){
         chart.legend.textColor = Color.WHITE
     }
 
+    chart.isAutoScaleMinMaxEnabled = true
+
     chart.xAxis.valueFormatter = CustomValueFormatter(CsvData.DATE_TIME_CHART_FORMAT)
     val markerView = CustomMarkerView(context, R.layout.custom_marker_view, chart.data, CsvData.DATE_TIME_TOOLTIP_FORMAT)
     chart.marker = markerView
