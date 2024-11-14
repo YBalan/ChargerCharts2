@@ -6,12 +6,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.example.chargercharts2.models.CsvData
+import com.example.chargercharts2.models.Cycle
 import com.example.chargercharts2.utils.getFileNameFromUri
-import com.github.mikephil.charting.data.Entry
-import com.github.mikephil.charting.data.LineData
-import com.github.mikephil.charting.data.LineDataSet
-import java.io.BufferedReader
-import java.io.InputStreamReader
 
 class DashboardViewModel : ViewModel() {
 
@@ -22,7 +18,15 @@ class DashboardViewModel : ViewModel() {
     val fileName: LiveData<String> get() = _fileName
 
     fun parseCsvFile(context: Context, fileUri: Uri) {
-        _csvChartData.postValue(com.example.chargercharts2.models.parseCsvFile(context, fileUri))
+        _csvChartData.postValue(CsvData.parseCsvFile(context, fileUri))
         _fileName.postValue(getFileNameFromUri(context, fileUri) ?: "File Name")
+    }
+
+    fun clear(){
+        _csvChartData.postValue(CsvData(0.0f, 0.0f, emptyList(), mutableListOf()))
+    }
+
+    fun isEmpty() : Boolean{
+        return _csvChartData.value?.values?.isEmpty() != false
     }
 }

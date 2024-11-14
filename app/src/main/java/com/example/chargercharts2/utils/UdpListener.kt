@@ -93,7 +93,7 @@ object UdpListener {
                 _isListening = true
 
                 var ip = getLocalIpAddress()
-                var port = socket?.localPort
+                var port = socket.localPort
                 Log.i("UdpListener", "Started")
                 postMessage("Started at: $ip:$port...")
 

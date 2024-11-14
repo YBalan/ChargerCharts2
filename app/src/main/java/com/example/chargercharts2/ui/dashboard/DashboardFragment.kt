@@ -15,7 +15,6 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.example.chargercharts2.databinding.FragmentDashboardBinding // Adjust with actual binding class
 import com.example.chargercharts2.models.CsvData
-import com.example.chargercharts2.models.plotCsvData
 import com.example.chargercharts2.utils.chooseValue
 import com.example.chargercharts2.utils.isDarkTheme
 
@@ -44,7 +43,7 @@ class DashboardFragment : Fragment() {
         }
 
         viewModel.csvChartData.observe(viewLifecycleOwner) { csvData ->
-            plotCsvChart(csvData)
+            updateControls(plotCsvChart(csvData, !binding.ignoreZeroCheckBox.isChecked))
         }
 
         viewModel.fileName.observe(viewLifecycleOwner){ fileName ->
@@ -52,7 +51,7 @@ class DashboardFragment : Fragment() {
         }
 
         binding.ignoreZeroCheckBox.setOnCheckedChangeListener { _, isChecked ->
-            plotCsvChart(viewModel.csvChartData.value)
+            plotCsvChart(viewModel.csvChartData.value, !isChecked)
             binding.lineChart.invalidate()
         }
     }
@@ -69,6 +68,7 @@ class DashboardFragment : Fragment() {
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 // Define your back button behavior
+                viewModel.clear()
                 updateControls(isChartView = false)
             }
         })
@@ -84,13 +84,13 @@ class DashboardFragment : Fragment() {
             }
         }
 
-    private fun plotCsvChart(csvData: CsvData?) {
-        if (csvData == null) {
-            Toast.makeText(context, "Failed to plot data", Toast.LENGTH_SHORT).show()
-            return
+    private fun plotCsvChart(csvData: CsvData?, ignoreZeros: Boolean) : Boolean {
+        if (csvData == null || csvData.values.isEmpty()) {
+            //Toast.makeText(context, "Failed to plot data", Toast.LENGTH_SHORT).show()
+            return false
         }
 
-        if(plotCsvData(context, binding.lineChart, csvData, !binding.ignoreZeroCheckBox.isChecked, isDarkTheme())){
+        if(CsvData.plotCsvData(context, binding.lineChart, csvData, ignoreZeros, isDarkTheme())){
             updateControls(isChartView = true)
             setCheckBoxColorFromDataSet(binding.voltageCheckBox, csvData.voltageLabel)
             setCheckBoxColorFromDataSet(binding.relayCheckBox, csvData.relayLabel)
@@ -108,9 +108,12 @@ class DashboardFragment : Fragment() {
                 toggleDataSetVisibility(csvData.relayLabel, isChecked)
                 csvData.relayVisible = isChecked
             }
+            return true
         }else{
             Toast.makeText(context, "No data available", Toast.LENGTH_SHORT).show()
         }
+
+        return false
     }
 
     private fun toggleDataSetVisibility(label: String, isVisible: Boolean) {

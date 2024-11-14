@@ -45,7 +45,7 @@ class CustomMarkerView(context: Context?,
     }
 }
 
-class CustomValueFormatter(dateTimeFormat: String)
+class CustomXValueFormatter(dateTimeFormat: String)
     : ValueFormatter() {
     private val dateTimeFormatter = DateTimeFormatter.ofPattern(dateTimeFormat)
 
@@ -74,7 +74,7 @@ fun setChartSettings(context: Context?, chart: LineChart, isDarkTheme: Boolean){
 
     chart.isAutoScaleMinMaxEnabled = true
 
-    chart.xAxis.valueFormatter = CustomValueFormatter(CsvData.DATE_TIME_CHART_FORMAT)
+    chart.xAxis.valueFormatter = CustomXValueFormatter(CsvData.DATE_TIME_CHART_FORMAT)
     val markerView = CustomMarkerView(context, R.layout.custom_marker_view, chart.data, CsvData.DATE_TIME_TOOLTIP_FORMAT)
     chart.marker = markerView
     markerView.chartView = chart // For MPAndroidChart 3.0+
