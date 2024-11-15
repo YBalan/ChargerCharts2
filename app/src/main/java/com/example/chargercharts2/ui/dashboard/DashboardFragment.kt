@@ -3,11 +3,13 @@ package com.example.chargercharts2.ui.dashboard
 import android.app.Activity
 import android.content.Intent
 import android.content.res.ColorStateList
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
+import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
@@ -17,6 +19,8 @@ import com.example.chargercharts2.databinding.FragmentDashboardBinding // Adjust
 import com.example.chargercharts2.models.CsvData
 import com.example.chargercharts2.utils.chooseValue
 import com.example.chargercharts2.utils.isDarkTheme
+import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.example.chargercharts2.R
 
 class DashboardFragment : Fragment() {
 

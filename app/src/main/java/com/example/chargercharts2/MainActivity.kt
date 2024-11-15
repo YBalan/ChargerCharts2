@@ -1,6 +1,8 @@
 package com.example.chargercharts2
 
+import android.content.res.Configuration
 import android.os.Bundle
+import android.view.View
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
@@ -31,5 +33,20 @@ class MainActivity : AppCompatActivity() {
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
+
+        adjustNavBarVisibility()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        adjustNavBarVisibility()
+    }
+
+    private fun adjustNavBarVisibility() {
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        binding.navView.visibility = if (isLandscape) View.GONE else View.VISIBLE
+        supportActionBar?.apply {
+            if (isLandscape) hide() else show()
+        }
     }
 }

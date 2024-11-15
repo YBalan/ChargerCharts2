@@ -15,6 +15,7 @@ import com.github.mikephil.charting.data.LineDataSet
 import com.opencsv.CSVReader
 import java.io.BufferedReader
 import java.io.InputStreamReader
+import java.time.Duration
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -33,16 +34,29 @@ data class CsvDataValue(
     val dateTime: LocalDateTime,
     val voltage: Float,
     val relay: Float,
-    var cycleType: CycleType = CycleType.Unknown,
-    var cycleValue: Float = 0.0f,
-)
+    var cycle: Cycle? = null
+){
+    companion object {
+        fun valueFormatter(data: Any?): String? {
+            val dtFormatter = DateTimeFormatter.ofPattern(CsvData.DATE_TIME_TOOLTIP_FORMAT)
+            return (data as? CsvDataValue)?.let {
+                "Date: ${dtFormatter.format(it.dateTime)}\nVoltage: ${it.voltage}\nRelay: ${chooseValue(it.relay == 0f, "Off", "On")}\nCycle: ${it.cycle?.type ?: "NA"}\nDuration: ${it.cycle?.duration ?: "NA"}"
+            }
+        }
+    }
+}
 
 data class Cycle(
     val start: LocalDateTime,
-    val end: LocalDateTime,
+    var end: LocalDateTime,
     val type: CycleType,
-    val value: Float,
-)
+){
+    var value: Float = 0f
+    var avgValue: Float = 0f
+    var medValue: Float = 0f
+    val duration: Duration
+        get() = Duration.between(start, end)
+}
 
 data class CsvData(
     var maxV: Float,
@@ -53,7 +67,7 @@ data class CsvData(
     var voltageVisible: Boolean = true,
     var relayLabel: String = "Relay",
     var relayVisible: Boolean = true,
-    var cyclesLabel: String = "Cycles",
+    var cyclesLabel: String = "Cycle",
     var cyclesVisible: Boolean = true,
 ) {
     companion object {
@@ -88,7 +102,7 @@ data class CsvData(
             }
 
             // Set the expected DateTime format
-            val dateTimeFormatter = DateTimeFormatter.ofPattern(CsvData.DATE_TIME_CSV_FORMAT)
+            val dateTimeFormatter = DateTimeFormatter.ofPattern(DATE_TIME_CSV_FORMAT)
                 .withResolverStyle(ResolverStyle.STRICT)
 
             var rowIndex = 1
@@ -134,6 +148,10 @@ data class CsvData(
 
             detectCycles(csvData, ignoreZeros = true, csvData.minV, csvData.maxV)
 
+            for(cycle in csvData.cycles) {
+                Log.i("parseCsvFile", "${cycle.type}: start: ${cycle.start}; end: ${cycle.end}; duration: ${cycle.duration}; val: ${cycle.avgValue}")
+            }
+
             return csvData
         }
 
@@ -166,17 +184,22 @@ data class CsvData(
             data.values.forEach { csvData ->
                 if (!ignoreZeros || csvData.voltage > 0f) {
                     val dt = csvData.dateTime.toEpoch().toFloat()
-                    voltage.add(Entry(dt, csvData.voltage))
 
-                    relay.add(
-                        Entry(dt,
-                            chooseValue(
-                                csvData.relay > 0.0f, data.maxV + relayOffset,
-                                chooseValue(data.minV - relayOffset > 0f, data.minV - relayOffset, 0f)
-                            )
-                        )
-                    )
-                    cycles.add(Entry(dt, csvData.cycleValue))
+                    val voltageEntry = Entry(dt, csvData.voltage)
+                    voltageEntry.data = csvData
+                    voltage.add(voltageEntry)
+
+                    val relayEntry = Entry(dt, chooseValue(
+                        csvData.relay > 0.0f, data.maxV + relayOffset,
+                        chooseValue(data.minV - relayOffset > 0f, data.minV - relayOffset, 0f)))
+                    relayEntry.data = csvData
+                    relay.add(relayEntry)
+
+                    csvData.cycle?.let {
+                        val cycleEntry = Entry(dt, it.value)
+                        cycleEntry.data = csvData
+                        cycles.add(cycleEntry)
+                    }
                 }
             }
 
@@ -214,20 +237,23 @@ data class CsvData(
             chart.data = lineData
             chart.description.isEnabled = false
 
-            setChartSettings(context, chart, isDarkTheme)
+            setChartSettings(context, chart, isDarkTheme) { data -> CsvDataValue.valueFormatter(data) }
 
             chart.invalidate() // Refresh the chart
 
             return true
         }
 
-        fun detectCycles(data: CsvData, ignoreZeros: Boolean, minVoltage: Float, maxVoltage: Float, windowSize: Int = 10, threshold: Float = 0.1f) {
+        fun detectCycles(data: CsvData, ignoreZeros: Boolean,
+                         minVoltage: Float, maxVoltage: Float,
+                         windowSize: Int = 5, threshold: Float = 0.1f) {
             if (data.values.size < windowSize) return
 
             val movingMedians = mutableListOf<Float>()
             val cycles = mutableListOf<Cycle>()
             var currentCycleType = CycleType.Unknown
             var cycleStart = data.values.first().dateTime
+            var prevCycle = Cycle(cycleStart, cycleStart, currentCycleType)
             var lastMedian = 0f
 
             // Filter values based on ignoreZeros
@@ -255,7 +281,8 @@ data class CsvData(
 
             // Detect cycles based on changes in the moving median
             for ((index, csvData) in filteredValues.withIndex()) {
-                csvData.cycleValue = csvData.voltage
+                csvData.cycle = prevCycle
+                prevCycle.value = csvData.voltage
                 if (index < windowSize - 1) continue
                 val median = movingMedians[index - windowSize + 1]
 
@@ -273,19 +300,23 @@ data class CsvData(
                         val cycleEnd = filteredValues[index - 1].dateTime
                         val avgValue = filteredValues.slice(index - windowSize + 1 until index)
                             .map { it.voltage }.average().toFloat()
-                        cycles.add(Cycle(cycleStart, cycleEnd, currentCycleType, avgValue))
+                        prevCycle.end = cycleEnd
+                        prevCycle = Cycle(cycleStart, cycleEnd, currentCycleType)
+                        prevCycle.avgValue = avgValue
+                        prevCycle.medValue = median
+                        cycles.add(prevCycle)
                     }
                     cycleStart = csvData.dateTime
                     currentCycleType = newCycleType
                 }
 
-                csvData.cycleType = currentCycleType
-                csvData.cycleValue = chooseValue(
-                    currentCycleType == CycleType.Charging, maxVoltage, minVoltage)
-                csvData.cycleValue = chooseValue(
-                    currentCycleType == CycleType.Unknown, csvData.voltage, csvData.cycleValue)
-                csvData.cycleValue = chooseValue(csvData.cycleValue == 0f,
-                    csvData.voltage, csvData.cycleValue)
+                prevCycle.value = when (prevCycle.type) {
+                    CycleType.Charging -> maxVoltage
+                    CycleType.Discharging -> minVoltage
+                    CycleType.Floating -> prevCycle.avgValue / 2
+                    else -> csvData.voltage
+                }
+                csvData.cycle = prevCycle
 
                 lastMedian = median
             }
@@ -295,7 +326,7 @@ data class CsvData(
                 val lastCycleEnd = filteredValues.last().dateTime
                 val lastCycleAvgValue = filteredValues.takeLast(windowSize)
                     .map { it.voltage }.average().toFloat()
-                cycles.add(Cycle(cycleStart, lastCycleEnd, currentCycleType, lastCycleAvgValue))
+                cycles.add(Cycle(cycleStart, lastCycleEnd, currentCycleType))
             }
 
             // Assign detected cycles to the CsvData object
