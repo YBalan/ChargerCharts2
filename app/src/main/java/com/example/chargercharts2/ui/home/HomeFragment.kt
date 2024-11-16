@@ -1,6 +1,5 @@
 package com.example.chargercharts2.ui.home
 
-import android.content.Context
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.os.Bundle
@@ -126,12 +125,13 @@ class HomeFragment : Fragment() {
                 }
 
                 lineDataSet.clear()
+
                 lineDataSet.lineWidth = 3f
                 lineDataSet.color = getColor(idx)
                 lineDataSet.setCircleColor(getColor(idx))
                 lineDataSet.valueTextColor = Color.WHITE
 
-                if(lineDataSet.isVisible){
+                if(lineDataSet.isVisible) {
                     data.toList().forEach { (x, y) -> lineDataSet.addEntry(Entry(x, y)) }
                 }
 
@@ -139,6 +139,8 @@ class HomeFragment : Fragment() {
                     binding.lineChart.data?.addDataSet(lineDataSet)
                     addCheckboxForDataSet(name, binding.lineChart)
                 }
+
+                recalculateYAxis(binding.lineChart)
             }
         }catch(e: Exception){
             Log.e("HomeFragment", "dataSets?.toList()?.forEachIndexed", e)
@@ -184,6 +186,34 @@ class HomeFragment : Fragment() {
         }
     }
 
+    private fun recalculateYAxis(chart: LineChart) {
+        val allVisibleEntries = chart.data.dataSets
+            .filter { it.isVisible } // Include only visible data sets
+            .flatMap  { dataSet ->
+                (0 until dataSet.entryCount).map { dataSet.getEntryForIndex(it) }
+            } // Collect all entries from visible data sets
+
+        val margin = 0.1f
+
+        if (allVisibleEntries.isNotEmpty()) {
+            val minY = allVisibleEntries.minOf { it.y }
+            val maxY = allVisibleEntries.maxOf { it.y }
+
+            chart.axisLeft.axisMinimum = chooseValue(minY - margin  == 0f, minY, minY - margin)
+            chart.axisLeft.axisMaximum = maxY
+
+            chart.axisRight.axisMinimum = chooseValue(minY - margin  == 0f, minY, minY - margin)
+            chart.axisRight.axisMaximum = maxY
+        } else {
+            // Reset axis if no data is visible
+            chart.axisLeft.resetAxisMaximum()
+            chart.axisLeft.resetAxisMinimum()
+
+            chart.axisRight.resetAxisMaximum()
+            chart.axisRight.resetAxisMinimum()
+        }
+    }
+
     private fun addCheckboxForDataSet(setName: String, chart: LineChart) {
         val dataSet = dataSetsMap[setName]
         Log.i("HomeFragment", "addCheckboxForDataSet: $setName isVisible: ${dataSet?.isVisible}")
@@ -194,14 +224,9 @@ class HomeFragment : Fragment() {
                 buttonTintList = ColorStateList.valueOf(dataSet.color)
                 setOnCheckedChangeListener { _, isChecked ->
                     dataSet.isVisible = isChecked
-                    if(!isChecked){
+                    /*if(!isChecked){
                         dataSet.clear()
-                        chart.axisLeft.resetAxisMaximum()
-                        chart.axisLeft.resetAxisMinimum()
-
-                        chart.axisRight.resetAxisMaximum()
-                        chart.axisRight.resetAxisMinimum()
-                    }
+                    }*/
 
                     fillChart(homeViewModel.dataSets.value)
 

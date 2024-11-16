@@ -200,10 +200,10 @@ object UdpListener {
             val address = InetAddress.getByName(serverAddress)
 
             try {
-                val voltage1 = random.nextInt(10, 14).toFloat()
+                val voltage1 = random.nextInt(23, 28).toFloat()
                 val name1 = "ChargerCharts|28V|"
 
-                val voltage2 = random.nextInt(23, 28).toFloat()
+                val voltage2 = random.nextInt(10, 13).toFloat()
                 val name2 = "ChargerCharts|12.4V|"
 
                 val voltage3 = random.nextInt(16, 24).toFloat()

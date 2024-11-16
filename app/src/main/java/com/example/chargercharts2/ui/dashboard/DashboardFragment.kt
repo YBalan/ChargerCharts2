@@ -1,7 +1,6 @@
 package com.example.chargercharts2.ui.dashboard
 
 import android.app.Activity
-import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.content.res.Configuration
@@ -18,7 +17,6 @@ import androidx.fragment.app.viewModels
 import com.example.chargercharts2.databinding.FragmentDashboardBinding // Adjust with actual binding class
 import com.example.chargercharts2.models.CsvData
 import com.example.chargercharts2.utils.chooseValue
-import com.example.chargercharts2.utils.dpToPx
 import com.example.chargercharts2.utils.isDarkTheme
 import com.example.chargercharts2.utils.updateViewMarginBottom
 

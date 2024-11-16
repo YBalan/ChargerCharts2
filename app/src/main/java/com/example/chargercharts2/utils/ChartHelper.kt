@@ -1,5 +1,6 @@
 package com.example.chargercharts2.utils
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import com.github.mikephil.charting.components.MarkerView
@@ -13,10 +14,10 @@ import com.example.chargercharts2.databinding.CustomMarkerViewBinding
 import com.github.mikephil.charting.formatter.ValueFormatter
 import android.view.LayoutInflater
 import com.example.chargercharts2.R
-import com.example.chargercharts2.models.CsvData
 import com.github.mikephil.charting.utils.MPPointF
 
 // Custom marker view class
+@SuppressLint("ViewConstructor")
 class CustomMarkerView(context: Context?,
                        layoutResource: Int,
                        private val lineData: LineData,
@@ -38,7 +39,7 @@ class CustomMarkerView(context: Context?,
                         binding.tvContent.text = it
                     }
 
-                    if(binding.tvContent.text.isEmpty())
+                    if(customFormatter == null)
                     {
                         binding.tvContent.text =
                             String.format(
