@@ -1,5 +1,6 @@
 package com.example.chargercharts2.ui.home
 
+import android.content.Context
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.os.Bundle
@@ -20,6 +21,7 @@ import com.example.chargercharts2.utils.*
 import android.graphics.Color
 import android.widget.LinearLayout
 import com.example.chargercharts2.BuildConfig.IS_DEBUG_BUILD
+import com.example.chargercharts2.models.CsvData
 import com.github.mikephil.charting.charts.LineChart
 
 class HomeFragment : Fragment() {
@@ -62,11 +64,23 @@ class HomeFragment : Fragment() {
         setupSettingsAndApplyButton()
     }
 
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+
+        updateCheckBoxContainerOrientation()
+    }
+
     private fun updateCheckBoxContainerOrientation() {
-        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            binding.checkBoxContainer.orientation = LinearLayout.HORIZONTAL
-        } else {
-            binding.checkBoxContainer.orientation = LinearLayout.VERTICAL
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        binding.checkBoxContainer.orientation = if (isLandscape) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
+        binding.settings.visibility = if(isLandscape) View.GONE else View.VISIBLE
+
+        if(isLandscape) {
+            updateViewMarginBottom(binding.checkBoxContainer, 8, context)
+        }
+        else{
+            updateViewMarginBottom(binding.checkBoxContainer, 64, context)
         }
     }
 
@@ -83,7 +97,8 @@ class HomeFragment : Fragment() {
             xAxis.granularity = 60F
             xAxis.isGranularityEnabled = true
 
-            setChartSettings(context, this, isDarkTheme())
+            setChartSettings(context, this, isDarkTheme(), CsvData.DATE_TIME_UDP_CHART_FORMAT,
+                CsvData.DATE_TIME_TOOLTIP_FORMAT)
         }
     }
 

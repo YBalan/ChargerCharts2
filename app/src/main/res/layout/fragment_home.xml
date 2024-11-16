@@ -10,9 +10,8 @@
 	<LinearLayout
 		android:layout_width="match_parent"
 		android:layout_height="match_parent"
-		android:layout_marginBottom="32dp"
-		android:orientation="vertical"
-		android:padding="16dp"
+		android:layout_marginBottom="24dp"
+		android:orientation="vertical"		
 		app:layout_constraintBottom_toBottomOf="parent"
 		app:layout_constraintEnd_toEndOf="parent"
 		app:layout_constraintStart_toStartOf="parent"
@@ -20,6 +19,7 @@
 
 		<!-- Horizontal layout for port, limit, and apply button -->
 		<LinearLayout
+			android:id="@+id/settings"
 			android:layout_width="match_parent"
 			android:layout_height="wrap_content"
 			android:layout_marginBottom="8dp"
@@ -99,8 +99,8 @@
 			android:layout_gravity="start"
 			android:gravity="start"
 			android:orientation="vertical"
-			android:padding="34dp"
-			app:layout_constraintBottom_toBottomOf="parent"
+			android:layout_marginBottom="32dp"
+			app:layout_constraintBottom_toBottomOf="@+id/lineChart"
 			app:layout_constraintEnd_toEndOf="parent"
 			app:layout_constraintStart_toStartOf="parent"
 			app:layout_constraintTop_toTopOf="parent" />

@@ -1,6 +1,7 @@
 package com.example.chargercharts2.ui.dashboard
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.content.res.Configuration
@@ -9,7 +10,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
-import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
@@ -18,9 +18,9 @@ import androidx.fragment.app.viewModels
 import com.example.chargercharts2.databinding.FragmentDashboardBinding // Adjust with actual binding class
 import com.example.chargercharts2.models.CsvData
 import com.example.chargercharts2.utils.chooseValue
+import com.example.chargercharts2.utils.dpToPx
 import com.example.chargercharts2.utils.isDarkTheme
-import com.google.android.material.bottomnavigation.BottomNavigationView
-import com.example.chargercharts2.R
+import com.example.chargercharts2.utils.updateViewMarginBottom
 
 class DashboardFragment : Fragment() {
 
@@ -58,6 +58,12 @@ class DashboardFragment : Fragment() {
             plotCsvChart(viewModel.csvChartData.value, !isChecked)
             binding.lineChart.invalidate()
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+
+        updateControls(isChartView = !viewModel.isEmpty())
     }
 
     private fun openFilePicker() {
@@ -137,6 +143,15 @@ class DashboardFragment : Fragment() {
         binding.fileNameTextView.visibility = chooseValue(isChartView, View.VISIBLE, View.GONE)
         binding.checkBoxContainer.visibility = chooseValue(isChartView, View.VISIBLE, View.GONE)
         binding.pickFileButton.visibility = chooseValue(isChartView, View.GONE, View.VISIBLE)
+
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        if(isLandscape) {
+            updateViewMarginBottom(binding.lineChart, 8, context)
+        }
+        else{
+            updateViewMarginBottom(binding.lineChart, 70, context)
+        }
     }
 
     override fun onDestroyView() {

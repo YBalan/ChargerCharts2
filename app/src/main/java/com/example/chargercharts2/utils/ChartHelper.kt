@@ -36,7 +36,10 @@ class CustomMarkerView(context: Context?,
 
                     customFormatter?.invoke(e.data)?.let {
                         binding.tvContent.text = it
-                    }?: {
+                    }
+
+                    if(binding.tvContent.text.isEmpty())
+                    {
                         binding.tvContent.text =
                             String.format(
                                 Locale.getDefault(),
@@ -74,7 +77,7 @@ fun LineData?.isSetExistsByLabel(label: String, ignoreCase: Boolean = true) : Bo
     return this.getDataSetByLabel(label, ignoreCase) != null
 }
 
-fun setChartSettings(context: Context?, chart: LineChart, isDarkTheme: Boolean, customFormatter: ((Any?) -> String?)? = null){
+fun setChartSettings(context: Context?, chart: LineChart, isDarkTheme: Boolean, xAxisFormat: String, toolTipFormat: String, customFormatter: ((Any?) -> String?)? = null){
 
     //chart.setBackgroundColor(Color.BLACK)
 
@@ -88,8 +91,8 @@ fun setChartSettings(context: Context?, chart: LineChart, isDarkTheme: Boolean, 
 
     chart.isAutoScaleMinMaxEnabled = true
 
-    chart.xAxis.valueFormatter = CustomXValueFormatter(CsvData.DATE_TIME_CHART_FORMAT)
-    val markerView = CustomMarkerView(context, R.layout.custom_marker_view, chart.data, CsvData.DATE_TIME_TOOLTIP_FORMAT, customFormatter)
+    chart.xAxis.valueFormatter = CustomXValueFormatter(xAxisFormat)
+    val markerView = CustomMarkerView(context, R.layout.custom_marker_view, chart.data, toolTipFormat, customFormatter)
     chart.marker = markerView
     markerView.chartView = chart // For MPAndroidChart 3.0+
 }

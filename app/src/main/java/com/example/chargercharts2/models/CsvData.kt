@@ -71,7 +71,8 @@ data class CsvData(
     var cyclesVisible: Boolean = true,
 ) {
     companion object {
-        const val DATE_TIME_CHART_FORMAT: String = "MM-dd-yy HH:mm"
+        const val DATE_TIME_CSV_CHART_FORMAT: String = "MM-dd-yy HH:mm"
+        const val DATE_TIME_UDP_CHART_FORMAT: String = "HH:mm:ss"
         const val DATE_TIME_CSV_FORMAT: String = "uuuu-MM-dd HH:mm:ss"
         const val DATE_TIME_TOOLTIP_FORMAT: String = "HH:mm:ss MM-dd-yy"
 
@@ -237,7 +238,8 @@ data class CsvData(
             chart.data = lineData
             chart.description.isEnabled = false
 
-            setChartSettings(context, chart, isDarkTheme) { data -> CsvDataValue.valueFormatter(data) }
+            setChartSettings(context, chart, isDarkTheme, DATE_TIME_CSV_CHART_FORMAT,
+                DATE_TIME_TOOLTIP_FORMAT) { data -> CsvDataValue.valueFormatter(data) }
 
             chart.invalidate() // Refresh the chart
 
