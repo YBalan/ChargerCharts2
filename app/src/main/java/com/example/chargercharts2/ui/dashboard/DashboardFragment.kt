@@ -102,10 +102,15 @@ class DashboardFragment : Fragment() {
             updateControls(isChartView = true)
             setCheckBoxColorFromDataSet(binding.voltageCheckBox, csvData.voltageLabel)
             setCheckBoxColorFromDataSet(binding.relayCheckBox, csvData.relayLabel)
+            setCheckBoxColorFromDataSet(binding.cyclesCheckBox, csvData.cyclesLabel)
+
             binding.voltageCheckBox.isChecked = csvData.voltageVisible
             binding.relayCheckBox.isChecked = csvData.relayVisible
+            binding.cyclesCheckBox.isChecked = csvData.cyclesVisible
             binding.voltageCheckBox.text = csvData.voltageLabel
             binding.relayCheckBox.text = csvData.relayLabel
+            binding.cyclesCheckBox.text = csvData.cyclesLabel
+
             // Set up CheckBox listeners to toggle chart visibility
             binding.voltageCheckBox.setOnCheckedChangeListener { _, isChecked ->
                 toggleDataSetVisibility(csvData.voltageLabel, isChecked)
@@ -116,6 +121,12 @@ class DashboardFragment : Fragment() {
                 toggleDataSetVisibility(csvData.relayLabel, isChecked)
                 csvData.relayVisible = isChecked
             }
+
+            binding.cyclesCheckBox.setOnCheckedChangeListener{_, isChecked ->
+                toggleDataSetVisibility(csvData.cyclesLabel, isChecked)
+                csvData.cyclesVisible = isChecked
+            }
+
             return true
         }else{
             Toast.makeText(context, "No data available", Toast.LENGTH_SHORT).show()

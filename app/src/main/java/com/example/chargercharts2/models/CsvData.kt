@@ -43,7 +43,9 @@ data class CsvDataValue(
             val dtFormatter = DateTimeFormatter.ofPattern(CsvData.DATE_TIME_TOOLTIP_FORMAT)
             return (data as? CsvDataValue)?.let {
                 (if(dataSetName.isNullOrEmpty()) "" else dataSetName + "\n") +
-                        "Date: ${dtFormatter.format(it.dateTime)}\nVoltage: ${it.voltage}\nRelay: ${chooseValue(it.relay == 0f, "Off", "On")}\nCycle: ${it.cycle?.type ?: "NA"}\nDuration: ${it.cycle?.duration ?: "NA"}"
+                "Date: ${dtFormatter.format(it.dateTime)}\nVoltage: ${it.voltage}\nRelay: ${chooseValue(it.relay == 0f, "Off", "On")}" +
+                (if(it.cycle != null) "\nCycle: ${it.cycle?.type}" else "") +
+                (if(it.cycle?.duration != null) "\nDuration: ${it.cycle?.duration}" else "")
             }
         }
     }
@@ -70,8 +72,8 @@ data class CsvData(
     var voltageVisible: Boolean = true,
     var relayLabel: String = "Relay",
     var relayVisible: Boolean = true,
-    var cyclesLabel: String = "Cycle",
-    var cyclesVisible: Boolean = true,
+    var cyclesLabel: String = "Cycles",
+    var cyclesVisible: Boolean = false,
 ) {
     companion object {
         const val DATE_TIME_CSV_CHART_FORMAT: String = "MM-dd-yy HH:mm"

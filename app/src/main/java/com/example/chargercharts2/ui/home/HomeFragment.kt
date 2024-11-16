@@ -57,7 +57,7 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         Log.i("HomeFragment", "onViewCreated")
 
-        updateCheckBoxContainerOrientation()
+        updateControls()
         setupChart()
         fillChart(homeViewModel.dataSets.value)
         setupObservers()
@@ -67,14 +67,14 @@ class HomeFragment : Fragment() {
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
 
-        updateCheckBoxContainerOrientation()
+        updateControls()
     }
 
-    private fun updateCheckBoxContainerOrientation() {
+    private fun updateControls() {
         val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
         binding.checkBoxContainer.orientation = if (isLandscape) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
-        binding.settings.visibility = if(isLandscape) View.GONE else View.VISIBLE
+        binding.settings.visibility = if(isLandscape && isStarted()) View.GONE else View.VISIBLE
 
         if(isLandscape) {
             updateViewMarginBottom(binding.checkBoxContainer, 8, context)
@@ -82,6 +82,8 @@ class HomeFragment : Fragment() {
         else{
             updateViewMarginBottom(binding.checkBoxContainer, 64, context)
         }
+
+        updateSettingsControls()
     }
 
     private fun setupChart() {
@@ -113,7 +115,8 @@ class HomeFragment : Fragment() {
         })
 
         homeViewModel.removedEntry.observe(viewLifecycleOwner, Observer { entry ->
-            binding.lineChart.data?.dataSets?.forEach{ ds-> ds.removeEntryByXValue(entry.dateTime.toEpoch()) }
+            binding.lineChart.data?.dataSets?.forEach{ ds->
+                ds.removeEntryByXValue(entry.dateTime.toEpoch()) }
             invalidateChart()
         })
     }
@@ -174,13 +177,13 @@ class HomeFragment : Fragment() {
             fillChart(homeViewModel.dataSets.value)
             invalidateChart()
 
-            updateSettings()
+            updateControls()
         }
-        updateSettings()
+        updateControls()
     }
 
-    private fun updateSettings() {
-        if (UdpListener.isListening) {
+    private fun updateSettingsControls() {
+        if (isStarted()) {
             binding.applyButton.text = getString(R.string.stop)
             binding.portTextField.isEnabled = false
             binding.limitTextField.isEnabled = false
@@ -189,6 +192,10 @@ class HomeFragment : Fragment() {
             binding.portTextField.isEnabled = true
             binding.limitTextField.isEnabled = true
         }
+    }
+
+    private fun isStarted(): Boolean{
+        return UdpListener.isListening
     }
 
     private fun recalculateYAxis(chart: LineChart) {
@@ -229,12 +236,10 @@ class HomeFragment : Fragment() {
                 buttonTintList = ColorStateList.valueOf(dataSet.color)
                 setOnCheckedChangeListener { _, isChecked ->
                     dataSet.isVisible = isChecked
-                    /*if(!isChecked){
+                    if(!isChecked){
                         dataSet.clear()
-                    }*/
-
+                    }
                     fillChart(homeViewModel.dataSets.value)
-
                     invalidateChart()
                 }
             }
