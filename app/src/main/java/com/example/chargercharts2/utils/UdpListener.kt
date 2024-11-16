@@ -44,13 +44,13 @@ object UdpListener {
     private val _messages = MutableLiveData<List<String>>()
     val messages: LiveData<List<String>> get() = _messages
 
-    private val _dataSets = MutableLiveData<Map<String, List<Pair<Float, Float>>>>()
-    val dataSets: LiveData<Map<String, List<Pair<Float, Float>>>> get() = _dataSets
+    private val _dataSets = MutableLiveData<Map<String, List<CsvDataValue>>>()
+    val dataSets: LiveData<Map<String, List<CsvDataValue>>> get() = _dataSets
 
-    private val dataMap = mutableMapOf<String, MutableList<Pair<Float, Float>>>()
+    private val dataMap = mutableMapOf<String, MutableList<CsvDataValue>>()
 
-    private val _removedEntry = MutableLiveData<Pair<Float, Float>>()
-    val removedEntry: LiveData<Pair<Float, Float>> get() = _removedEntry
+    private val _removedEntry = MutableLiveData<CsvDataValue>()
+    val removedEntry: LiveData<CsvDataValue> get() = _removedEntry
 
     private val _lastError = MutableLiveData<String>()
     //val lastError: LiveData<String> get() = _lastError
@@ -93,7 +93,7 @@ object UdpListener {
                 _isListening = true
 
                 var ip = getLocalIpAddress()
-                var port = socket?.localPort
+                var port = socket.localPort
                 Log.i("UdpListener", "Started")
                 postMessage("Started at: $ip:$port...")
 
@@ -106,7 +106,7 @@ object UdpListener {
                     port = packet.port
                     postMessage("$ip:$port: $message")
 
-                    val (setName, timestamp, voltage) = message.split(",").map { it.trim() }
+                    val (setName, timestamp, voltage, relay) = message.split(",").map { it.trim() }
                     val dataList = dataMap.getOrPut(setName) { mutableListOf() }
 
                     val dateTime = try {
@@ -117,15 +117,16 @@ object UdpListener {
                         continue
                     }
 
-                    val timestampFloat = dateTime.toEpoch().toFloat()
+                    //val timestampFloat = dateTime.toEpoch().toFloat()
                     val voltageFloat = voltage.toFloat()
+                    val relayFloat = relay.toFloat()
 
                     Log.i("UdpListener", "dataList.size: ${dataList.size}")
                     if (dataList.size >= _dataLimit) {
                         //dataList.removeAt(0)
                         removeAtForAllDataSets(0)
                     }
-                    dataList.add(timestampFloat to voltageFloat)
+                    dataList.add(CsvDataValue(dateTime, voltageFloat, relayFloat))
 
                     _dataSets.postValue(dataMap)
                 }
@@ -200,10 +201,10 @@ object UdpListener {
             val address = InetAddress.getByName(serverAddress)
 
             try {
-                val voltage1 = random.nextInt(10, 14).toFloat()
+                val voltage1 = random.nextInt(23, 28).toFloat()
                 val name1 = "ChargerCharts|28V|"
 
-                val voltage2 = random.nextInt(23, 28).toFloat()
+                val voltage2 = random.nextInt(10, 13).toFloat()
                 val name2 = "ChargerCharts|12.4V|"
 
                 val voltage3 = random.nextInt(16, 24).toFloat()
@@ -213,10 +214,10 @@ object UdpListener {
                 val name4 = "ChargerCharts|8.0V|"
 
                 // Create a message to send
-                val message1 = "$name1,$dateTime,$voltage1".toByteArray()
-                val message2 = "$name2,$dateTime,$voltage2".toByteArray()
-                val message3 = "$name3,$dateTime,$voltage3".toByteArray()
-                val message4 = "$name4,$dateTime,$voltage4".toByteArray()
+                val message1 = "$name1,$dateTime,$voltage1,${random.nextInt(0,1)}".toByteArray()
+                val message2 = "$name2,$dateTime,$voltage2,${random.nextInt(0,1)}".toByteArray()
+                val message3 = "$name3,$dateTime,$voltage3,${random.nextInt(0,1)}".toByteArray()
+                val message4 = "$name4,$dateTime,$voltage4,${random.nextInt(0,1)}".toByteArray()
 
                 // Create a DatagramPacket to send the message
                 val packet1 = DatagramPacket(message1, message1.size, address, _port)

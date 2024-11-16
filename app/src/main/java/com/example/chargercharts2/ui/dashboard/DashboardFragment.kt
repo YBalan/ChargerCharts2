@@ -3,6 +3,7 @@ package com.example.chargercharts2.ui.dashboard
 import android.app.Activity
 import android.content.Intent
 import android.content.res.ColorStateList
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -15,9 +16,9 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.example.chargercharts2.databinding.FragmentDashboardBinding // Adjust with actual binding class
 import com.example.chargercharts2.models.CsvData
-import com.example.chargercharts2.models.plotCsvData
 import com.example.chargercharts2.utils.chooseValue
 import com.example.chargercharts2.utils.isDarkTheme
+import com.example.chargercharts2.utils.updateViewMarginBottom
 
 class DashboardFragment : Fragment() {
 
@@ -44,7 +45,7 @@ class DashboardFragment : Fragment() {
         }
 
         viewModel.csvChartData.observe(viewLifecycleOwner) { csvData ->
-            plotCsvChart(csvData)
+            updateControls(plotCsvChart(csvData, !binding.ignoreZeroCheckBox.isChecked))
         }
 
         viewModel.fileName.observe(viewLifecycleOwner){ fileName ->
@@ -52,9 +53,15 @@ class DashboardFragment : Fragment() {
         }
 
         binding.ignoreZeroCheckBox.setOnCheckedChangeListener { _, isChecked ->
-            plotCsvChart(viewModel.csvChartData.value)
+            plotCsvChart(viewModel.csvChartData.value, !isChecked)
             binding.lineChart.invalidate()
         }
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+
+        updateControls(isChartView = !viewModel.isEmpty())
     }
 
     private fun openFilePicker() {
@@ -69,6 +76,7 @@ class DashboardFragment : Fragment() {
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 // Define your back button behavior
+                viewModel.clear()
                 updateControls(isChartView = false)
             }
         })
@@ -84,20 +92,25 @@ class DashboardFragment : Fragment() {
             }
         }
 
-    private fun plotCsvChart(csvData: CsvData?) {
-        if (csvData == null) {
-            Toast.makeText(context, "Failed to plot data", Toast.LENGTH_SHORT).show()
-            return
+    private fun plotCsvChart(csvData: CsvData?, ignoreZeros: Boolean) : Boolean {
+        if (csvData == null || csvData.values.isEmpty()) {
+            //Toast.makeText(context, "Failed to plot data", Toast.LENGTH_SHORT).show()
+            return false
         }
 
-        if(plotCsvData(context, binding.lineChart, csvData, !binding.ignoreZeroCheckBox.isChecked, isDarkTheme())){
+        if(CsvData.plotCsvData(context, binding.lineChart, csvData, ignoreZeros, isDarkTheme())){
             updateControls(isChartView = true)
             setCheckBoxColorFromDataSet(binding.voltageCheckBox, csvData.voltageLabel)
             setCheckBoxColorFromDataSet(binding.relayCheckBox, csvData.relayLabel)
+            setCheckBoxColorFromDataSet(binding.cyclesCheckBox, csvData.cyclesLabel)
+
             binding.voltageCheckBox.isChecked = csvData.voltageVisible
             binding.relayCheckBox.isChecked = csvData.relayVisible
+            binding.cyclesCheckBox.isChecked = csvData.cyclesVisible
             binding.voltageCheckBox.text = csvData.voltageLabel
             binding.relayCheckBox.text = csvData.relayLabel
+            binding.cyclesCheckBox.text = csvData.cyclesLabel
+
             // Set up CheckBox listeners to toggle chart visibility
             binding.voltageCheckBox.setOnCheckedChangeListener { _, isChecked ->
                 toggleDataSetVisibility(csvData.voltageLabel, isChecked)
@@ -108,9 +121,18 @@ class DashboardFragment : Fragment() {
                 toggleDataSetVisibility(csvData.relayLabel, isChecked)
                 csvData.relayVisible = isChecked
             }
+
+            binding.cyclesCheckBox.setOnCheckedChangeListener{_, isChecked ->
+                toggleDataSetVisibility(csvData.cyclesLabel, isChecked)
+                csvData.cyclesVisible = isChecked
+            }
+
+            return true
         }else{
             Toast.makeText(context, "No data available", Toast.LENGTH_SHORT).show()
         }
+
+        return false
     }
 
     private fun toggleDataSetVisibility(label: String, isVisible: Boolean) {
@@ -130,6 +152,15 @@ class DashboardFragment : Fragment() {
         binding.fileNameTextView.visibility = chooseValue(isChartView, View.VISIBLE, View.GONE)
         binding.checkBoxContainer.visibility = chooseValue(isChartView, View.VISIBLE, View.GONE)
         binding.pickFileButton.visibility = chooseValue(isChartView, View.GONE, View.VISIBLE)
+
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        if(isLandscape) {
+            updateViewMarginBottom(binding.lineChart, 8, context)
+        }
+        else{
+            updateViewMarginBottom(binding.lineChart, 70, context)
+        }
     }
 
     override fun onDestroyView() {

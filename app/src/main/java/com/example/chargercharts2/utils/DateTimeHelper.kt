@@ -10,9 +10,9 @@ fun getDateTime(seconds: Float): LocalDateTime {
     return LocalDateTime.ofEpochSecond(seconds.toLong(), 0, ZoneOffset.UTC)
 }
 
-// Convert LocalDateTime to epoch milliseconds
-fun LocalDateTime.toEpoch(): Long {
-    return this.atZone(ZoneOffset.UTC).toInstant().epochSecond
+// Convert LocalDateTime to epoch seconds
+fun LocalDateTime.toEpoch(): Float {
+    return this.atZone(ZoneOffset.UTC).toInstant().epochSecond.toFloat()
 }
 
 fun getDefaultZoneOffset(): ZoneOffset {

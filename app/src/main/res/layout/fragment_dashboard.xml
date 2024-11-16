@@ -16,7 +16,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"/>
+        android:layout_marginTop="8dp"/>
 
     <!-- TextView to show the file name, centered at the top -->
     <TextView
@@ -26,7 +26,7 @@
         android:text="File Name"
         android:textSize="18sp"
         android:textStyle="bold"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:layout_gravity="center"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -39,7 +39,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_horizontal"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         app:layout_constraintTop_toBottomOf="@id/fileNameTextView"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -58,15 +58,23 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="Relay"
-            android:layout_marginStart="16dp"
-            android:checked="true" />
-		<!-- CheckBox for Relay data set -->
+            android:layout_marginStart="8dp"
+            android:checked="true" />		
+		<!-- CheckBox for Cycles data set -->			
+        <CheckBox
+            android:id="@+id/cyclesCheckBox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Cycles"
+            android:layout_marginStart="8dp"
+            android:checked="false" />
+		<!-- CheckBox for ignoreZeros data set -->
         <CheckBox
             android:id="@+id/ignoreZeroCheckBox"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="'0'"
-            android:layout_marginStart="16dp"
+            android:layout_marginStart="8dp"
             android:checked="true" />
     </LinearLayout>
 

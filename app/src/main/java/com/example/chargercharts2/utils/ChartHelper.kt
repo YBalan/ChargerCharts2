@@ -1,5 +1,6 @@
 package com.example.chargercharts2.utils
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
 import com.github.mikephil.charting.components.MarkerView
@@ -13,39 +14,54 @@ import com.example.chargercharts2.databinding.CustomMarkerViewBinding
 import com.github.mikephil.charting.formatter.ValueFormatter
 import android.view.LayoutInflater
 import com.example.chargercharts2.R
-import com.example.chargercharts2.models.CsvData
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet
+import com.github.mikephil.charting.utils.MPPointF
 
 // Custom marker view class
+@SuppressLint("ViewConstructor")
 class CustomMarkerView(context: Context?,
                        layoutResource: Int,
                        private val lineData: LineData,
-                       dateTimeFormat: String)
+                       dateTimeFormat: String,
+                       private val customFormatter: ((Any?, ILineDataSet?) -> String?)? = null)
     : MarkerView(context, layoutResource) {
-    //private val tvContent: TextView = findViewById(R.id.tvContent)
-    //private val binding = CustomMarkerViewBinding.bind(this)
+
     private val binding: CustomMarkerViewBinding = CustomMarkerViewBinding.inflate(LayoutInflater.from(context), this, true)
     private val dateTimeFormatter = DateTimeFormatter.ofPattern(dateTimeFormat)
 
     override fun refreshContent(e: Entry?, highlight: Highlight?) {
         e?.let {
-            if(highlight != null) {
+            highlight?.let {
                 val dataSet = lineData.getDataSetByIndex(highlight.dataSetIndex)
-                setBackgroundColor(dataSet.color)
+                if(dataSet.isVisible) {
+                    setBackgroundColor(dataSet.color)
 
-                binding.tvContent.text =
-                    String.format(
-                        Locale.getDefault(), "%s\n%s\nVal: %.1f",
-                        dataSet.label,
-                        dateTimeFormatter.format(getDateTime(e.x)),
-                        e.y
-                    ) // Customize the content displayed in the tooltip
+                    val content = customFormatter?.invoke(e.data, dataSet)
+                    binding.tvContent.text = content
+
+                    if(content.isNullOrEmpty())
+                    {
+                        binding.tvContent.text =
+                            String.format(
+                                Locale.getDefault(),
+                                "%s\n%s\nVal: %.1f",
+                                dataSet.label,
+                                dateTimeFormatter.format(getDateTime(e.x)),
+                                e.y) // Customize the content displayed in the tooltip
+                    }
+                }
             }
         }
         super.refreshContent(e, highlight)
     }
+
+    override fun getOffset(): MPPointF {
+        // Position the marker appropriately
+        return MPPointF((-width / 2).toFloat(), (-height).toFloat())
+    }
 }
 
-class CustomValueFormatter(dateTimeFormat: String)
+class CustomXValueFormatter(dateTimeFormat: String)
     : ValueFormatter() {
     private val dateTimeFormatter = DateTimeFormatter.ofPattern(dateTimeFormat)
 
@@ -55,12 +71,14 @@ class CustomValueFormatter(dateTimeFormat: String)
     }
 }
 
+
+
 fun LineData?.isSetExistsByLabel(label: String, ignoreCase: Boolean = true) : Boolean{
     this ?: return false // Return false if LineData is null
     return this.getDataSetByLabel(label, ignoreCase) != null
 }
 
-fun setChartSettings(context: Context?, chart: LineChart, isDarkTheme: Boolean){
+fun setChartSettings(context: Context?, chart: LineChart, isDarkTheme: Boolean, xAxisFormat: String, toolTipFormat: String, customFormatter: ((Any?, ILineDataSet?) -> String?)? = null){
 
     //chart.setBackgroundColor(Color.BLACK)
 
@@ -74,8 +92,8 @@ fun setChartSettings(context: Context?, chart: LineChart, isDarkTheme: Boolean){
 
     chart.isAutoScaleMinMaxEnabled = true
 
-    chart.xAxis.valueFormatter = CustomValueFormatter(CsvData.DATE_TIME_CHART_FORMAT)
-    val markerView = CustomMarkerView(context, R.layout.custom_marker_view, chart.data, CsvData.DATE_TIME_TOOLTIP_FORMAT)
+    chart.xAxis.valueFormatter = CustomXValueFormatter(xAxisFormat)
+    val markerView = CustomMarkerView(context, R.layout.custom_marker_view, chart.data, toolTipFormat, customFormatter)
     chart.marker = markerView
     markerView.chartView = chart // For MPAndroidChart 3.0+
 }

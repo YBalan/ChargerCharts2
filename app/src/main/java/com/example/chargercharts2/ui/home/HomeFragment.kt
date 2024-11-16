@@ -20,6 +20,8 @@ import com.example.chargercharts2.utils.*
 import android.graphics.Color
 import android.widget.LinearLayout
 import com.example.chargercharts2.BuildConfig.IS_DEBUG_BUILD
+import com.example.chargercharts2.models.CsvData
+import com.example.chargercharts2.models.CsvDataValue
 import com.github.mikephil.charting.charts.LineChart
 
 class HomeFragment : Fragment() {
@@ -55,19 +57,33 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         Log.i("HomeFragment", "onViewCreated")
 
-        updateCheckBoxContainerOrientation()
+        updateControls()
         setupChart()
         fillChart(homeViewModel.dataSets.value)
         setupObservers()
         setupSettingsAndApplyButton()
     }
 
-    private fun updateCheckBoxContainerOrientation() {
-        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            binding.checkBoxContainer.orientation = LinearLayout.HORIZONTAL
-        } else {
-            binding.checkBoxContainer.orientation = LinearLayout.VERTICAL
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+
+        updateControls()
+    }
+
+    private fun updateControls() {
+        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        binding.checkBoxContainer.orientation = if (isLandscape) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
+        binding.settings.visibility = if(isLandscape && isStarted()) View.GONE else View.VISIBLE
+
+        if(isLandscape) {
+            updateViewMarginBottom(binding.checkBoxContainer, 8, context)
         }
+        else{
+            updateViewMarginBottom(binding.checkBoxContainer, 64, context)
+        }
+
+        updateSettingsControls()
     }
 
     private fun setupChart() {
@@ -83,7 +99,8 @@ class HomeFragment : Fragment() {
             xAxis.granularity = 60F
             xAxis.isGranularityEnabled = true
 
-            setChartSettings(context, this, isDarkTheme())
+            setChartSettings(context, this, isDarkTheme(), CsvData.DATE_TIME_UDP_CHART_FORMAT,
+                CsvData.DATE_TIME_TOOLTIP_FORMAT) { data, ds -> CsvDataValue.valueFormatter(data, ds?.label) }
         }
     }
 
@@ -98,12 +115,13 @@ class HomeFragment : Fragment() {
         })
 
         homeViewModel.removedEntry.observe(viewLifecycleOwner, Observer { entry ->
-            binding.lineChart.data?.dataSets?.forEach{ ds-> ds.removeEntryByXValue(entry.first) }
+            binding.lineChart.data?.dataSets?.forEach{ ds->
+                ds.removeEntryByXValue(entry.dateTime.toEpoch()) }
             invalidateChart()
         })
     }
 
-    private fun fillChart(dataSets: Map<String, List<Pair<Float, Float>>>?) {
+    private fun fillChart(dataSets: Map<String, List<CsvDataValue>>?) {
         try{
             dataSets?.toList()?.forEachIndexed { idx, (name, data) ->
                 val lineDataSet = dataSetsMap.getOrPut(name) {
@@ -111,19 +129,26 @@ class HomeFragment : Fragment() {
                 }
 
                 lineDataSet.clear()
+
                 lineDataSet.lineWidth = 3f
                 lineDataSet.color = getColor(idx)
                 lineDataSet.setCircleColor(getColor(idx))
                 lineDataSet.valueTextColor = Color.WHITE
 
-                if(lineDataSet.isVisible){
-                    data.toList().forEach { (x, y) -> lineDataSet.addEntry(Entry(x, y)) }
+                if(lineDataSet.isVisible) {
+                    data.toList().forEach { csvValue ->
+                        val entry = Entry(csvValue.dateTime.toEpoch(), csvValue.voltage)
+                        entry.data = csvValue
+                        lineDataSet.addEntry(entry)
+                    }
                 }
 
                 if(!binding.lineChart.data.isSetExistsByLabel(name, true)){
                     binding.lineChart.data?.addDataSet(lineDataSet)
                     addCheckboxForDataSet(name, binding.lineChart)
                 }
+
+                recalculateYAxis(binding.lineChart)
             }
         }catch(e: Exception){
             Log.e("HomeFragment", "dataSets?.toList()?.forEachIndexed", e)
@@ -152,13 +177,13 @@ class HomeFragment : Fragment() {
             fillChart(homeViewModel.dataSets.value)
             invalidateChart()
 
-            updateSettings()
+            updateControls()
         }
-        updateSettings()
+        updateControls()
     }
 
-    private fun updateSettings() {
-        if (UdpListener.isListening) {
+    private fun updateSettingsControls() {
+        if (isStarted()) {
             binding.applyButton.text = getString(R.string.stop)
             binding.portTextField.isEnabled = false
             binding.limitTextField.isEnabled = false
@@ -166,6 +191,38 @@ class HomeFragment : Fragment() {
             binding.applyButton.text = getString(R.string.start)
             binding.portTextField.isEnabled = true
             binding.limitTextField.isEnabled = true
+        }
+    }
+
+    private fun isStarted(): Boolean{
+        return UdpListener.isListening
+    }
+
+    private fun recalculateYAxis(chart: LineChart) {
+        val allVisibleEntries = chart.data.dataSets
+            .filter { it.isVisible } // Include only visible data sets
+            .flatMap  { dataSet ->
+                (0 until dataSet.entryCount).map { dataSet.getEntryForIndex(it) }
+            } // Collect all entries from visible data sets
+
+        val margin = 0.1f
+
+        if (allVisibleEntries.isNotEmpty()) {
+            val minY = allVisibleEntries.minOf { it.y }
+            val maxY = allVisibleEntries.maxOf { it.y }
+
+            chart.axisLeft.axisMinimum = chooseValue(minY - margin < 0f, 0f, minY - margin)
+            chart.axisLeft.axisMaximum = maxY + margin
+
+            chart.axisRight.axisMinimum = chooseValue(minY - margin < 0f, 0f, minY - margin)
+            chart.axisRight.axisMaximum = maxY + margin
+        } else {
+            // Reset axis if no data is visible
+            chart.axisLeft.resetAxisMaximum()
+            chart.axisLeft.resetAxisMinimum()
+
+            chart.axisRight.resetAxisMaximum()
+            chart.axisRight.resetAxisMinimum()
         }
     }
 
@@ -181,15 +238,8 @@ class HomeFragment : Fragment() {
                     dataSet.isVisible = isChecked
                     if(!isChecked){
                         dataSet.clear()
-                        chart.axisLeft.resetAxisMaximum()
-                        chart.axisLeft.resetAxisMinimum()
-
-                        chart.axisRight.resetAxisMaximum()
-                        chart.axisRight.resetAxisMinimum()
                     }
-
                     fillChart(homeViewModel.dataSets.value)
-
                     invalidateChart()
                 }
             }
