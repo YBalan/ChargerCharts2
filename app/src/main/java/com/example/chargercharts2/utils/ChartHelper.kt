@@ -14,6 +14,7 @@ import com.example.chargercharts2.databinding.CustomMarkerViewBinding
 import com.github.mikephil.charting.formatter.ValueFormatter
 import android.view.LayoutInflater
 import com.example.chargercharts2.R
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet
 import com.github.mikephil.charting.utils.MPPointF
 
 // Custom marker view class
@@ -22,7 +23,7 @@ class CustomMarkerView(context: Context?,
                        layoutResource: Int,
                        private val lineData: LineData,
                        dateTimeFormat: String,
-                       private val customFormatter: ((Any?) -> String?)? = null)
+                       private val customFormatter: ((Any?, ILineDataSet?) -> String?)? = null)
     : MarkerView(context, layoutResource) {
 
     private val binding: CustomMarkerViewBinding = CustomMarkerViewBinding.inflate(LayoutInflater.from(context), this, true)
@@ -35,11 +36,10 @@ class CustomMarkerView(context: Context?,
                 if(dataSet.isVisible) {
                     setBackgroundColor(dataSet.color)
 
-                    customFormatter?.invoke(e.data)?.let {
-                        binding.tvContent.text = it
-                    }
+                    val content = customFormatter?.invoke(e.data, dataSet)
+                    binding.tvContent.text = content
 
-                    if(customFormatter == null)
+                    if(content.isNullOrEmpty())
                     {
                         binding.tvContent.text =
                             String.format(
@@ -78,7 +78,7 @@ fun LineData?.isSetExistsByLabel(label: String, ignoreCase: Boolean = true) : Bo
     return this.getDataSetByLabel(label, ignoreCase) != null
 }
 
-fun setChartSettings(context: Context?, chart: LineChart, isDarkTheme: Boolean, xAxisFormat: String, toolTipFormat: String, customFormatter: ((Any?) -> String?)? = null){
+fun setChartSettings(context: Context?, chart: LineChart, isDarkTheme: Boolean, xAxisFormat: String, toolTipFormat: String, customFormatter: ((Any?, ILineDataSet?) -> String?)? = null){
 
     //chart.setBackgroundColor(Color.BLACK)
 

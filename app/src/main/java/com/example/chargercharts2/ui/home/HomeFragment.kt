@@ -21,6 +21,7 @@ import android.graphics.Color
 import android.widget.LinearLayout
 import com.example.chargercharts2.BuildConfig.IS_DEBUG_BUILD
 import com.example.chargercharts2.models.CsvData
+import com.example.chargercharts2.models.CsvDataValue
 import com.github.mikephil.charting.charts.LineChart
 
 class HomeFragment : Fragment() {
@@ -97,7 +98,7 @@ class HomeFragment : Fragment() {
             xAxis.isGranularityEnabled = true
 
             setChartSettings(context, this, isDarkTheme(), CsvData.DATE_TIME_UDP_CHART_FORMAT,
-                CsvData.DATE_TIME_TOOLTIP_FORMAT)
+                CsvData.DATE_TIME_TOOLTIP_FORMAT) { data, ds -> CsvDataValue.valueFormatter(data, ds?.label) }
         }
     }
 
@@ -112,12 +113,12 @@ class HomeFragment : Fragment() {
         })
 
         homeViewModel.removedEntry.observe(viewLifecycleOwner, Observer { entry ->
-            binding.lineChart.data?.dataSets?.forEach{ ds-> ds.removeEntryByXValue(entry.first) }
+            binding.lineChart.data?.dataSets?.forEach{ ds-> ds.removeEntryByXValue(entry.dateTime.toEpoch()) }
             invalidateChart()
         })
     }
 
-    private fun fillChart(dataSets: Map<String, List<Pair<Float, Float>>>?) {
+    private fun fillChart(dataSets: Map<String, List<CsvDataValue>>?) {
         try{
             dataSets?.toList()?.forEachIndexed { idx, (name, data) ->
                 val lineDataSet = dataSetsMap.getOrPut(name) {
@@ -132,7 +133,11 @@ class HomeFragment : Fragment() {
                 lineDataSet.valueTextColor = Color.WHITE
 
                 if(lineDataSet.isVisible) {
-                    data.toList().forEach { (x, y) -> lineDataSet.addEntry(Entry(x, y)) }
+                    data.toList().forEach { csvValue ->
+                        val entry = Entry(csvValue.dateTime.toEpoch(), csvValue.voltage)
+                        entry.data = csvValue
+                        lineDataSet.addEntry(entry)
+                    }
                 }
 
                 if(!binding.lineChart.data.isSetExistsByLabel(name, true)){
@@ -199,11 +204,11 @@ class HomeFragment : Fragment() {
             val minY = allVisibleEntries.minOf { it.y }
             val maxY = allVisibleEntries.maxOf { it.y }
 
-            chart.axisLeft.axisMinimum = chooseValue(minY - margin  == 0f, minY, minY - margin)
-            chart.axisLeft.axisMaximum = maxY
+            chart.axisLeft.axisMinimum = chooseValue(minY - margin < 0f, 0f, minY - margin)
+            chart.axisLeft.axisMaximum = maxY + margin
 
-            chart.axisRight.axisMinimum = chooseValue(minY - margin  == 0f, minY, minY - margin)
-            chart.axisRight.axisMaximum = maxY
+            chart.axisRight.axisMinimum = chooseValue(minY - margin < 0f, 0f, minY - margin)
+            chart.axisRight.axisMaximum = maxY + margin
         } else {
             // Reset axis if no data is visible
             chart.axisLeft.resetAxisMaximum()

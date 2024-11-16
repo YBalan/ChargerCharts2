@@ -1,5 +1,6 @@
 package com.example.chargercharts2.models
 
+import android.R
 import android.content.Context
 import android.graphics.Color
 import android.net.Uri
@@ -12,6 +13,7 @@ import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.Entry
 import com.github.mikephil.charting.data.LineData
 import com.github.mikephil.charting.data.LineDataSet
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet
 import com.opencsv.CSVReader
 import java.io.BufferedReader
 import java.io.InputStreamReader
@@ -37,10 +39,11 @@ data class CsvDataValue(
     var cycle: Cycle? = null
 ){
     companion object {
-        fun valueFormatter(data: Any?): String? {
+        fun valueFormatter(data: Any?, dataSetName: String?): String? {
             val dtFormatter = DateTimeFormatter.ofPattern(CsvData.DATE_TIME_TOOLTIP_FORMAT)
             return (data as? CsvDataValue)?.let {
-                "Date: ${dtFormatter.format(it.dateTime)}\nVoltage: ${it.voltage}\nRelay: ${chooseValue(it.relay == 0f, "Off", "On")}\nCycle: ${it.cycle?.type ?: "NA"}\nDuration: ${it.cycle?.duration ?: "NA"}"
+                (if(dataSetName.isNullOrEmpty()) "" else dataSetName + "\n") +
+                        "Date: ${dtFormatter.format(it.dateTime)}\nVoltage: ${it.voltage}\nRelay: ${chooseValue(it.relay == 0f, "Off", "On")}\nCycle: ${it.cycle?.type ?: "NA"}\nDuration: ${it.cycle?.duration ?: "NA"}"
             }
         }
     }
@@ -239,7 +242,7 @@ data class CsvData(
             chart.description.isEnabled = false
 
             setChartSettings(context, chart, isDarkTheme, DATE_TIME_CSV_CHART_FORMAT,
-                DATE_TIME_TOOLTIP_FORMAT) { data -> CsvDataValue.valueFormatter(data) }
+                DATE_TIME_TOOLTIP_FORMAT) { data, ds -> CsvDataValue.valueFormatter(data, null) }
 
             chart.invalidate() // Refresh the chart
 
