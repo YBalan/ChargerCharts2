@@ -52,6 +52,9 @@ object UdpListener {
     private val _removedEntry = MutableLiveData<CsvDataValue>()
     val removedEntry: LiveData<CsvDataValue> get() = _removedEntry
 
+    private val _addedEntry = MutableLiveData<CsvDataValue>()
+    val addedEntry: LiveData<CsvDataValue> get() = _addedEntry
+
     private val _lastError = MutableLiveData<String>()
     //val lastError: LiveData<String> get() = _lastError
 
@@ -126,8 +129,11 @@ object UdpListener {
                         //dataList.removeAt(0)
                         removeAtForAllDataSets(0)
                     }
-                    dataList.add(CsvDataValue(dateTime, voltageFloat, relayFloat))
 
+                    val addEntry = CsvDataValue(dateTime, voltageFloat, relayFloat)
+                    dataList.add(addEntry)
+
+                    _addedEntry.postValue(addEntry)
                     _dataSets.postValue(dataMap)
                 }
             } catch (e: Exception) {

@@ -4,7 +4,9 @@ import android.app.Activity
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.content.res.Configuration
+import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -14,11 +16,14 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import com.example.chargercharts2.analytics.DetectCycles
+import com.example.chargercharts2.chartbuilders.HistoryChartBuilder
 import com.example.chargercharts2.databinding.FragmentDashboardBinding // Adjust with actual binding class
 import com.example.chargercharts2.models.CsvData
-import com.example.chargercharts2.utils.chooseValue
 import com.example.chargercharts2.utils.isDarkTheme
+import com.example.chargercharts2.utils.isLandscape
 import com.example.chargercharts2.utils.updateViewMarginBottom
+import com.github.mikephil.charting.data.LineData
 
 class DashboardFragment : Fragment() {
 
@@ -98,7 +103,9 @@ class DashboardFragment : Fragment() {
             return false
         }
 
-        if(CsvData.plotCsvData(context, binding.lineChart, csvData, ignoreZeros, isDarkTheme())){
+        DetectCycles.analyze(csvData, ignoreZeros, csvData.minV, csvData.maxV)
+
+        if(HistoryChartBuilder().build(context, binding.lineChart, csvData, ignoreZeros, isDarkTheme())){
             updateControls(isChartView = true)
             setCheckBoxColorFromDataSet(binding.voltageCheckBox, csvData.voltageLabel)
             setCheckBoxColorFromDataSet(binding.relayCheckBox, csvData.relayLabel)
@@ -107,23 +114,25 @@ class DashboardFragment : Fragment() {
             binding.voltageCheckBox.isChecked = csvData.voltageVisible
             binding.relayCheckBox.isChecked = csvData.relayVisible
             binding.cyclesCheckBox.isChecked = csvData.cyclesVisible
+
             binding.voltageCheckBox.text = csvData.voltageLabel
             binding.relayCheckBox.text = csvData.relayLabel
             binding.cyclesCheckBox.text = csvData.cyclesLabel
 
             // Set up CheckBox listeners to toggle chart visibility
             binding.voltageCheckBox.setOnCheckedChangeListener { _, isChecked ->
-                toggleDataSetVisibility(csvData.voltageLabel, isChecked)
+                toggleChartDataSetVisibility(csvData.voltageLabel, isChecked)
                 csvData.voltageVisible = isChecked
             }
 
             binding.relayCheckBox.setOnCheckedChangeListener { _, isChecked ->
-                toggleDataSetVisibility(csvData.relayLabel, isChecked)
+                toggleChartDataSetVisibility(csvData.relayLabel, isChecked)
                 csvData.relayVisible = isChecked
             }
 
             binding.cyclesCheckBox.setOnCheckedChangeListener{_, isChecked ->
-                toggleDataSetVisibility(csvData.cyclesLabel, isChecked)
+                Log.i("binding.cyclesCheckBox.setOnCheckedChangeListener","label: ${csvData.cyclesLabel}; IsChecked: $isChecked")
+                toggleChartDataSetVisibility(csvData.cyclesLabel, isChecked)
                 csvData.cyclesVisible = isChecked
             }
 
@@ -135,27 +144,26 @@ class DashboardFragment : Fragment() {
         return false
     }
 
-    private fun toggleDataSetVisibility(label: String, isVisible: Boolean) {
+    private fun toggleChartDataSetVisibility(label: String, isVisible: Boolean) {
         // Find the dataset by label and set its visibility
         val dataSet = binding.lineChart.data?.getDataSetByLabel(label, true)
+        Log.i("toggleChartDataSetVisibility","label: $label; IsVisible: $isVisible; dataSet: ${dataSet != null}")
         dataSet?.isVisible = isVisible
         binding.lineChart.invalidate() // Refresh chart to apply changes
     }
 
     private fun setCheckBoxColorFromDataSet(checkBox: CheckBox, label: String){
         val dataSet = binding.lineChart.data?.getDataSetByLabel(label, true)
-        checkBox.buttonTintList = ColorStateList.valueOf(dataSet?.color ?: checkBox.buttonTintList!!.defaultColor)
+        checkBox.buttonTintList = ColorStateList.valueOf(dataSet?.color ?: Color.YELLOW)
     }
 
     private fun updateControls(isChartView: Boolean) {
-        binding.lineChart.visibility = chooseValue(isChartView, View.VISIBLE, View.GONE)
-        binding.fileNameTextView.visibility = chooseValue(isChartView, View.VISIBLE, View.GONE)
-        binding.checkBoxContainer.visibility = chooseValue(isChartView, View.VISIBLE, View.GONE)
-        binding.pickFileButton.visibility = chooseValue(isChartView, View.GONE, View.VISIBLE)
+        binding.lineChart.visibility = if(isChartView) View.VISIBLE else View.GONE
+        binding.fileNameTextView.visibility = if(isChartView) View.VISIBLE else View.GONE
+        binding.checkBoxContainer.visibility = if(isChartView) View.VISIBLE else View.GONE
+        binding.pickFileButton.visibility = if(isChartView) View.GONE else View.VISIBLE
 
-        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-
-        if(isLandscape) {
+        if(isLandscape()) {
             updateViewMarginBottom(binding.lineChart, 8, context)
         }
         else{
