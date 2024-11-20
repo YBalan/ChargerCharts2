@@ -20,6 +20,7 @@ import com.example.chargercharts2.analytics.DetectCycles
 import com.example.chargercharts2.chartbuilders.HistoryChartBuilder
 import com.example.chargercharts2.databinding.FragmentDashboardBinding // Adjust with actual binding class
 import com.example.chargercharts2.models.CsvData
+import com.example.chargercharts2.utils.hideHighlight
 import com.example.chargercharts2.utils.isDarkTheme
 import com.example.chargercharts2.utils.isLandscape
 import com.example.chargercharts2.utils.updateViewMarginBottom
@@ -100,11 +101,12 @@ class DashboardFragment : Fragment() {
     private fun plotCsvChart(csvData: CsvData?, ignoreZeros: Boolean) : Boolean {
         if (csvData == null || csvData.values.isEmpty()) {
             //Toast.makeText(context, "Failed to plot data", Toast.LENGTH_SHORT).show()
+            binding.lineChart.data = null
+            binding.lineChart.invalidate()
             return false
         }
 
-        DetectCycles.analyze(csvData, ignoreZeros, csvData.minV, csvData.maxV)
-
+        binding.lineChart.hideHighlight()
         if(HistoryChartBuilder().build(context, binding.lineChart, csvData, ignoreZeros, isDarkTheme())){
             updateControls(isChartView = true)
             setCheckBoxColorFromDataSet(binding.voltageCheckBox, csvData.voltageLabel)
@@ -138,6 +140,8 @@ class DashboardFragment : Fragment() {
 
             return true
         }else{
+            binding.lineChart.data = null
+            binding.lineChart.invalidate()
             Toast.makeText(context, "No data available", Toast.LENGTH_SHORT).show()
         }
 

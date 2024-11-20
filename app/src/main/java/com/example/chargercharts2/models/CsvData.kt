@@ -44,14 +44,14 @@ data class CsvDataValue(
 
 data class Cycle(
     val start: LocalDateTime,
-    var end: LocalDateTime,
-    val type: CycleType,
+    var end: LocalDateTime? = null,
+    val type: CycleType = CycleType.Unknown,
 ){
-    var value: Float = 0f
+    var value: Float? = null
     var avgValue: Float = 0f
     var medValue: Float = 0f
     val duration: Duration
-        get() = Duration.between(start, end)
+        get() = Duration.between(start, end ?: start)
 }
 
 data class CsvData(
@@ -83,8 +83,8 @@ data class CsvData(
         return when (value) {
             getValueForRelayOff(value) -> "Off"
             getValueForRelayOn(value) -> "On"
-            getValueForCycleOff(value) -> CycleType.Discharging.toString()
-            getValueForCycleOn(value) -> CycleType.Charging.toString()
+            getValueForCycleDischarging() -> CycleType.Discharging.toString()
+            getValueForCycleCharging() -> CycleType.Charging.toString()
             else -> null
         }
     }
@@ -101,15 +101,19 @@ data class CsvData(
         return if (minV - relayVOffset < 0f) 0f else minV - relayVOffset
     }
 
-    fun getValueForCycle(value: Float) : Float {
-        return if (value > 0.0f) getValueForCycleOn(value) else getValueForCycleOff(value)
+    fun getValueForCycle(cycleType: CycleType) : Float? {
+        return when (cycleType) {
+            CycleType.Charging -> getValueForCycleCharging()
+            CycleType.Discharging -> getValueForCycleDischarging()
+            else -> null
+        }
     }
 
-    fun getValueForCycleOn(value: Float) : Float{
+    fun getValueForCycleCharging() : Float{
         return maxV + cycleVOffset
     }
 
-    fun getValueForCycleOff(value: Float) : Float {
+    fun getValueForCycleDischarging() : Float {
         return if (minV - cycleVOffset < 0f) 0f else minV - cycleVOffset
     }
 

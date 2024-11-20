@@ -43,9 +43,11 @@ open class ChartBuilderBase {
                 relay.add(relayEntry)
 
                 csvDataValue.cycle?.let {
-                    val cycleEntry = Entry(dt, csvData.getValueForCycle(it.value))
-                    cycleEntry.data = csvDataValue
-                    cycles.add(cycleEntry)
+                    if(it.value != null) {
+                        val cycleEntry = Entry(dt, it.value ?: 0f)
+                        cycleEntry.data = csvDataValue
+                        cycles.add(cycleEntry)
+                    }
                 }
             }
         }

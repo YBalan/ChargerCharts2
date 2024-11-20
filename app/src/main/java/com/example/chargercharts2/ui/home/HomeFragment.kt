@@ -44,7 +44,7 @@ class HomeFragment : Fragment() {
 
         updateControls()
         clearCheckBoxes()
-        fillChart(homeViewModel.dataSets.value)
+        plotCsvChart(homeViewModel.dataSets.value)
         setupObservers()
         setupSettingsAndApplyButton()
     }
@@ -75,7 +75,7 @@ class HomeFragment : Fragment() {
 
     private fun setupObservers() {
         homeViewModel.dataSets.observe(viewLifecycleOwner, Observer { dataSets ->
-            fillChart(dataSets)
+            plotCsvChart(dataSets)
             invalidateChart()
         })
 
@@ -86,7 +86,7 @@ class HomeFragment : Fragment() {
         })*/
     }
 
-    private fun fillChart(dataSets: Map<String, List<CsvDataValue>>?) {
+    private fun plotCsvChart(dataSets: Map<String, List<CsvDataValue>>?) {
         try{
             val chart = binding.lineChart
             chart.data?.clearValues()
@@ -134,7 +134,7 @@ class HomeFragment : Fragment() {
             UdpListener.clear()
             homeViewModel.clear()
             clearCheckBoxes()
-            fillChart(homeViewModel.dataSets.value)
+            plotCsvChart(homeViewModel.dataSets.value)
             invalidateChart()
 
             updateControls()
@@ -169,7 +169,7 @@ class HomeFragment : Fragment() {
                 setOnCheckedChangeListener { _, isChecked ->
                     csvData.voltageVisible = isChecked
                     binding.lineChart.hideHighlight()
-                    fillChart(homeViewModel.dataSets.value)
+                    plotCsvChart(homeViewModel.dataSets.value)
                     invalidateChart()
                 }
             }

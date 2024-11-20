@@ -2,14 +2,15 @@ package com.example.chargercharts2.analytics
 
 import android.util.Log
 import com.example.chargercharts2.models.CsvData
+import com.example.chargercharts2.models.CsvDataValue
 import com.example.chargercharts2.models.Cycle
 import com.example.chargercharts2.models.CycleType
+import java.time.LocalDateTime
 import kotlin.math.abs
 
 object DetectCycles {
     fun analyze(data: CsvData, ignoreZeros: Boolean,
-                     minVoltage: Float, maxVoltage: Float,
-                     windowSize: Int = 5, threshold: Float = 0.1f) {
+                      windowSize: Int = 5, threshold: Float = 0.1f) {
         if (data.values.size < windowSize) return
 
         val movingMedians = mutableListOf<Float>()
@@ -32,13 +33,7 @@ object DetectCycles {
         // Calculate moving median for the voltage values
         for (i in 0 until filteredValues.size - windowSize + 1) {
             val window = filteredValues.slice(i until i + windowSize)
-            val median = window.map { it.voltage }.sorted().let {
-                if (windowSize % 2 == 0) {
-                    (it[windowSize / 2 - 1] + it[windowSize / 2]) / 2
-                } else {
-                    it[windowSize / 2]
-                }
-            }
+            val median = calcMedian(window)
             movingMedians.add(median)
         }
 
@@ -74,8 +69,8 @@ object DetectCycles {
             }
 
             prevCycle.value = when (prevCycle.type) {
-                CycleType.Charging -> maxVoltage
-                CycleType.Discharging -> minVoltage
+                CycleType.Charging -> data.maxV
+                CycleType.Discharging -> data.minV
                 CycleType.Floating -> prevCycle.avgValue / 2
                 else -> csvData.voltage
             }
@@ -98,6 +93,87 @@ object DetectCycles {
 
         for(cycle in data.cycles) {
             Log.i("parseCsvFile", "${cycle.type}: start: ${cycle.start}; end: ${cycle.end}; duration: ${cycle.duration}; val: ${cycle.avgValue}")
+        }
+    }
+
+    fun analyzeSimple(csvData: CsvData, ignoreZeros: Boolean,
+                      windowSize: Int = 7, threshold: Float = 0.0f){
+        val cycles = mutableListOf<Cycle>()
+        // Filter values based on ignoreZeros
+        val filteredValues = if (ignoreZeros) {
+            csvData.values.filter { it.voltage > 0 }
+        } else {
+            csvData.values
+        }
+
+        val firstValue = filteredValues.firstOrNull() ?: CsvDataValue(LocalDateTime.now(), 0f, 0f)
+
+        val movingData =  fillMovingData(filteredValues, windowSize, useMedian = true)
+        var lastMovingValue = movingData.firstOrNull() ?: firstValue.voltage
+
+        var currentCycle = Cycle(firstValue.dateTime)
+        for ((index, csvDataValue) in filteredValues.withIndex()) {
+            csvDataValue.cycle = currentCycle
+
+            if (index < windowSize - 1) continue
+            val movingValue = movingData[index - windowSize + 1]
+
+            val change = movingValue - lastMovingValue
+            val currentCycleType = when {
+                change > threshold -> CycleType.Charging
+                change < -threshold -> CycleType.Discharging
+                abs(change) <= threshold -> CycleType.Floating
+                else -> CycleType.Unknown
+            }
+
+            if(currentCycleType != currentCycle.type){
+                currentCycle.end = csvDataValue.dateTime
+                cycles.add(currentCycle)
+
+                currentCycle = Cycle(csvDataValue.dateTime, type = currentCycleType)
+                csvDataValue.cycle = currentCycle
+                csvDataValue.cycle?.value = csvData.getValueForCycle(currentCycleType)
+            }
+
+            lastMovingValue = movingValue
+        }
+
+        currentCycle.end = filteredValues.lastOrNull()?.dateTime
+
+        csvData.cycles.clear()
+        csvData.cycles.addAll(cycles)
+
+        for(cycle in csvData.cycles) {
+            Log.i("Analytics", "${cycle.type}: start: ${cycle.start}; end: ${cycle.end}; duration: ${cycle.duration}; val: ${cycle.avgValue}")
+        }
+    }
+
+    fun fillMovingData(csvData: List<CsvDataValue>, windowSize: Int, useMedian: Boolean = true)
+        : List<Float>{
+        val movingData = mutableListOf<Float>()
+
+        // Ensure enough data points remain after filtering
+        if (csvData.size < windowSize) return movingData
+
+        // Calculate moving median or average for the voltage values
+        for (i in 0 until csvData.size - windowSize + 1) {
+            val window = csvData.slice(i until i + windowSize)
+            val median = if (useMedian) calcMedian(window) else calcAverage(window)
+            movingData.add(median)
+        }
+
+        return movingData
+    }
+
+    private fun calcAverage(window: List<CsvDataValue>): Float = window.map { it.voltage }.average().toFloat()
+
+    private fun calcMedian(window: List<CsvDataValue>): Float =
+        window.map { it.voltage }.sorted().let {
+        val windowSize = window.size
+        if (windowSize % 2 == 0) {
+            (it[windowSize / 2 - 1] + it[windowSize / 2]) / 2
+        } else {
+            it[windowSize / 2]
         }
     }
 }
