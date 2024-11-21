@@ -41,7 +41,7 @@ class HistoryChartBuilder : ChartBuilderBase() {
             setChartSettings(
                 context, chart, csvData, isDarkTheme, DATE_TIME_CSV_CHART_FORMAT,
                 DATE_TIME_TOOLTIP_FORMAT
-            ) { data, ds -> CsvDataValue.valueFormatter(data, null) }
+            ) { data, ds -> CsvDataValue.highlightValueFormatter(data, null) }
 
             chart.invalidate() // Refresh the chart
 

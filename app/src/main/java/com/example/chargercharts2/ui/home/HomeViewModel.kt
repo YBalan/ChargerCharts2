@@ -9,7 +9,7 @@ import com.github.mikephil.charting.data.LineDataSet
 
 class HomeViewModel : ViewModel() {
     val dataSets: LiveData<Map<String, List<CsvDataValue>>> = UdpListener.dataSets
-    //val removedEntry : LiveData<CsvDataValue> = UdpListener.removedEntry
+    val removedEntry : LiveData<CsvDataValue> = UdpListener.removedEntry
     //val addedEntry : LiveData<CsvDataValue> = UdpListener.addedEntry
     val csvDataMap = mutableMapOf<String, CsvData>()
 

@@ -16,6 +16,7 @@ import com.example.chargercharts2.R
 import com.example.chargercharts2.utils.*
 import android.widget.LinearLayout
 import com.example.chargercharts2.BuildConfig.IS_DEBUG_BUILD
+import com.example.chargercharts2.analytics.DetectCycles
 import com.example.chargercharts2.chartbuilders.LifeTimeChartBuilder
 import com.example.chargercharts2.models.CsvData
 import com.example.chargercharts2.models.CsvDataValue
@@ -79,14 +80,16 @@ class HomeFragment : Fragment() {
             invalidateChart()
         })
 
-        /*homeViewModel.removedEntry.observe(viewLifecycleOwner, Observer { entry ->
+        homeViewModel.removedEntry.observe(viewLifecycleOwner, Observer { entry ->
             binding.lineChart.data?.dataSets?.forEach{ ds->
+                Log.i("removedEntry.observe", "${ds.label}: xAxisValue: ${entry.dateTime}")
                 ds.removeEntryByXValue(entry.dateTime.toEpoch()) }
             invalidateChart()
-        })*/
+        })
     }
 
     private fun plotCsvChart(dataSets: Map<String, List<CsvDataValue>>?) {
+        val ignoreZeros = false
         try{
             val chart = binding.lineChart
             chart.data?.clearValues()
@@ -98,17 +101,18 @@ class HomeFragment : Fragment() {
                     csvData.values.add(csvValue)
                 }
 
+                DetectCycles.analyzeSimple(csvData, ignoreZeros, showCycleTraces = false)
+
                 csvData.relayVisible = false
                 csvData.cyclesVisible = false
                 csvData.voltageColor = getColor(idxForColor)
                 csvData.voltageLabel = name
-                if(LifeTimeChartBuilder().build(context, chart, csvData, ignoreZeros = false, isDarkTheme())){
+                if(LifeTimeChartBuilder().build(context, chart, csvData, ignoreZeros, isDarkTheme())){
                     addCheckbox(name, csvData.voltageVisible, csvData.voltageColor, csvData)
                 }else{
                     csvDataMap.remove(name)
                     removeCheckBox(name)
                 }
-
             }
         }catch(e: Exception){
             Log.e("HomeFragment", "dataSets?.toList()?.forEachIndexed", e)

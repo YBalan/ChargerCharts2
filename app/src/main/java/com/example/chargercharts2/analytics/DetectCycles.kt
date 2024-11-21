@@ -1,6 +1,7 @@
 package com.example.chargercharts2.analytics
 
 import android.util.Log
+import com.example.chargercharts2.BuildConfig.IS_DEBUG_BUILD
 import com.example.chargercharts2.models.CsvData
 import com.example.chargercharts2.models.CsvDataValue
 import com.example.chargercharts2.models.Cycle
@@ -97,7 +98,8 @@ object DetectCycles {
     }
 
     fun analyzeSimple(csvData: CsvData, ignoreZeros: Boolean,
-                      windowSize: Int = 7, threshold: Float = 0.0f){
+                      windowSize: Int = 7, threshold: Float = 0.0f,
+                      showCycleTraces: Boolean = true){
         val cycles = mutableListOf<Cycle>()
         // Filter values based on ignoreZeros
         val filteredValues = if (ignoreZeros) {
@@ -143,8 +145,13 @@ object DetectCycles {
         csvData.cycles.clear()
         csvData.cycles.addAll(cycles)
 
-        for(cycle in csvData.cycles) {
-            Log.i("Analytics", "${cycle.type}: start: ${cycle.start}; end: ${cycle.end}; duration: ${cycle.duration}; val: ${cycle.avgValue}")
+        if(IS_DEBUG_BUILD && showCycleTraces) {
+            for (cycle in csvData.cycles) {
+                Log.i(
+                    "Analytics",
+                    "${cycle.type}: start: ${cycle.start}; end: ${cycle.end}; duration: ${cycle.duration}; val: ${cycle.avgValue}"
+                )
+            }
         }
     }
 

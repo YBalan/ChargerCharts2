@@ -24,7 +24,7 @@ class LifeTimeChartBuilder : ChartBuilderBase() {
             //chart.xAxis.isGranularityEnabled = true
 
             setChartSettings(context, chart, csvData, isDarkTheme, CsvData.DATE_TIME_UDP_CHART_FORMAT,
-                CsvData.DATE_TIME_TOOLTIP_FORMAT) { data, ds -> CsvDataValue.valueFormatter(data, ds?.label) }
+                CsvData.DATE_TIME_TOOLTIP_FORMAT) { data, ds -> CsvDataValue.highlightValueFormatter(data, ds?.label) }
 
             return true
         }

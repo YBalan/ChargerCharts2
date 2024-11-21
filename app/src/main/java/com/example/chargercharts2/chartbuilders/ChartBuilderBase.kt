@@ -5,6 +5,7 @@ import android.graphics.Color
 import com.example.chargercharts2.BuildConfig.IS_DEBUG_BUILD
 import com.example.chargercharts2.R
 import com.example.chargercharts2.models.CsvData
+import com.example.chargercharts2.models.CsvDataValue
 import com.example.chargercharts2.utils.CustomMarkerView
 import com.example.chargercharts2.utils.CustomXValueFormatter
 import com.example.chargercharts2.utils.CustomYRightValueFormatter
@@ -55,32 +56,38 @@ open class ChartBuilderBase {
         val lineData = chart.data ?: LineData()
 
         if(addSetsIfNotVisible || csvData.voltageVisible) {
-            val dataSetVoltage = LineDataSet(voltage, csvData.voltageLabel)
-            dataSetVoltage.isVisible = csvData.voltageVisible
-            dataSetVoltage.color = csvData.voltageColor
-            dataSetVoltage.setCircleColor(csvData.voltageColor)
-            dataSetVoltage.highLightColor = csvData.voltageColor
-            //dataSetVoltage.highlightLineWidth = 3f
+            val dataSetVoltage = LineDataSet(voltage, csvData.voltageLabel).apply {
+                isVisible = csvData.voltageVisible
+                color = csvData.voltageColor
+                setCircleColor(csvData.voltageColor)
+                highLightColor = csvData.voltageColor
+                //highlightLineWidth = 3f
+                valueFormatter = CustomYRightValueFormatter(csvData)
+            }
             lineData.addDataSet(dataSetVoltage)
         }
 
         if(addSetsIfNotVisible || csvData.relayVisible) {
-            val dataSetRelay = LineDataSet(relay, csvData.relayLabel)
-            dataSetRelay.isVisible = csvData.relayVisible
-            dataSetRelay.color = csvData.relayColor
-            dataSetRelay.setCircleColor(csvData.relayColor)
-            dataSetRelay.highLightColor = csvData.relayColor
-            //dataSetRelay.highlightLineWidth = 3f
+            val dataSetRelay = LineDataSet(relay, csvData.relayLabel).apply {
+                isVisible = csvData.relayVisible
+                color = csvData.relayColor
+                setCircleColor(csvData.relayColor)
+                highLightColor = csvData.relayColor
+                //highlightLineWidth = 3f
+                valueFormatter = CustomYRightValueFormatter(csvData)
+            }
             lineData.addDataSet(dataSetRelay)
         }
 
         if(addSetsIfNotVisible || csvData.cyclesVisible) {
-            val dataSetCycles = LineDataSet(cycles, csvData.cyclesLabel)
-            dataSetCycles.isVisible = csvData.cyclesVisible
-            dataSetCycles.color = csvData.cyclesColor
-            dataSetCycles.setCircleColor(csvData.cyclesColor)
-            dataSetCycles.highLightColor = csvData.cyclesColor
-            //dataSetCycles.highlightLineWidth = 3f
+            val dataSetCycles = LineDataSet(cycles, csvData.cyclesLabel).apply {
+                isVisible = csvData.cyclesVisible
+                color = csvData.cyclesColor
+                setCircleColor(csvData.cyclesColor)
+                highLightColor = csvData.cyclesColor
+                //highlightLineWidth = 3f
+                valueFormatter = CustomYRightValueFormatter(csvData)
+            }
             lineData.addDataSet(dataSetCycles)
         }
 

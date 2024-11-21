@@ -171,7 +171,7 @@ class DashboardFragment : Fragment() {
             updateViewMarginBottom(binding.lineChart, 8, context)
         }
         else{
-            updateViewMarginBottom(binding.lineChart, 70, context)
+            updateViewMarginBottom(binding.lineChart, 80, context)
         }
     }
 
