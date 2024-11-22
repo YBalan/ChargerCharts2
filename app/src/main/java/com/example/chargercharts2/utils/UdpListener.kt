@@ -52,6 +52,9 @@ object UdpListener {
     private val _removedEntry = MutableLiveData<CsvDataValue>()
     val removedEntry: LiveData<CsvDataValue> get() = _removedEntry
 
+    private val _addedEntry = MutableLiveData<CsvDataValue>()
+    val addedEntry: LiveData<CsvDataValue> get() = _addedEntry
+
     private val _lastError = MutableLiveData<String>()
     //val lastError: LiveData<String> get() = _lastError
 
@@ -121,13 +124,16 @@ object UdpListener {
                     val voltageFloat = voltage.toFloat()
                     val relayFloat = relay.toFloat()
 
-                    Log.i("UdpListener", "dataList.size: ${dataList.size}")
-                    if (dataList.size >= _dataLimit) {
+                    Log.i("UdpListener", "dataLimit: $_dataLimit; dataList.size: ${dataList.size}")
+                    if (_dataLimit > 0 && dataList.size >= _dataLimit) {
                         //dataList.removeAt(0)
                         removeAtForAllDataSets(0)
                     }
-                    dataList.add(CsvDataValue(dateTime, voltageFloat, relayFloat))
 
+                    val addEntry = CsvDataValue(dateTime, voltageFloat, relayFloat)
+                    dataList.add(addEntry)
+
+                    _addedEntry.postValue(addEntry)
                     _dataSets.postValue(dataMap)
                 }
             } catch (e: Exception) {
@@ -210,7 +216,7 @@ object UdpListener {
                 val voltage3 = random.nextInt(16, 24).toFloat()
                 val name3 = "ChargerCharts|16.5V|"
 
-                val voltage4 = random.nextInt(8, 10).toFloat()
+                val voltage4 = random.nextInt(-1, 10).toFloat()
                 val name4 = "ChargerCharts|8.0V|"
 
                 // Create a message to send

@@ -10,38 +10,28 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
-import com.github.mikephil.charting.data.Entry
-import com.github.mikephil.charting.data.LineData
-import com.github.mikephil.charting.data.LineDataSet
 import com.example.chargercharts2.databinding.FragmentHomeBinding
 import android.widget.CheckBox
 import com.example.chargercharts2.R
 import com.example.chargercharts2.utils.*
-import android.graphics.Color
 import android.widget.LinearLayout
+import androidx.core.view.children
 import com.example.chargercharts2.BuildConfig.IS_DEBUG_BUILD
+import com.example.chargercharts2.analytics.DetectCycles
+import com.example.chargercharts2.chartbuilders.LifeTimeChartBuilder
 import com.example.chargercharts2.models.CsvData
 import com.example.chargercharts2.models.CsvDataValue
-import com.github.mikephil.charting.charts.LineChart
 
 class HomeFragment : Fragment() {
 
-    private val predefinedColors = listOf(
-        Color.RED,
-        Color.BLUE,
-        Color.GREEN,
-        Color.MAGENTA,
-        Color.CYAN,
-        Color.YELLOW,
-        Color.DKGRAY,
-        Color.LTGRAY
-    )
+    private val CHECK_BOX_ID = "checkBoxId_"
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
     private val homeViewModel: HomeViewModel by viewModels()
 
-    private val dataSetsMap get() = homeViewModel.dataSetsMap
+    private val csvDataMap get() = homeViewModel.csvDataMap
+    private val isIgnoreZeros: Boolean get() = !binding.ignoreZeroCheckBox.isChecked
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -58,8 +48,8 @@ class HomeFragment : Fragment() {
         Log.i("HomeFragment", "onViewCreated")
 
         updateControls()
-        setupChart()
-        fillChart(homeViewModel.dataSets.value)
+        clearCheckBoxes()
+        plotCsvChart(homeViewModel.dataSets.value, isIgnoreZeros)
         setupObservers()
         setupSettingsAndApplyButton()
     }
@@ -71,12 +61,10 @@ class HomeFragment : Fragment() {
     }
 
     private fun updateControls() {
-        val isLandscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        binding.checkBoxContainer.orientation = if (isLandscape()) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
+        binding.settings.visibility = if(isLandscape() && isStarted()) View.GONE else View.VISIBLE
 
-        binding.checkBoxContainer.orientation = if (isLandscape) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
-        binding.settings.visibility = if(isLandscape && isStarted()) View.GONE else View.VISIBLE
-
-        if(isLandscape) {
+        if(isLandscape()) {
             updateViewMarginBottom(binding.checkBoxContainer, 8, context)
         }
         else{
@@ -86,69 +74,60 @@ class HomeFragment : Fragment() {
         updateSettingsControls()
     }
 
-    private fun setupChart() {
-        binding.checkBoxContainer.removeAllViews()
-
-        binding.lineChart.clear()
-        binding.lineChart.apply {
-            data = LineData()
-            //axisLeft.axisMinimum = 0f
-            axisRight.isEnabled = true
-            description.isEnabled = false
-            xAxis.labelRotationAngle = 45f
-            xAxis.granularity = 60F
-            xAxis.isGranularityEnabled = true
-
-            setChartSettings(context, this, isDarkTheme(), CsvData.DATE_TIME_UDP_CHART_FORMAT,
-                CsvData.DATE_TIME_TOOLTIP_FORMAT) { data, ds -> CsvDataValue.valueFormatter(data, ds?.label) }
+    private fun clearCheckBoxes() {
+        binding.checkBoxContainer.children.filter { view ->
+            Log.i("clearCheckBoxes", view.tag.toString())
+            view.tag.toString().startsWith(CHECK_BOX_ID)
+        }.toList().forEach { chkBox ->
+            Log.i("clearCheckBoxes", "${(chkBox as? CheckBox)?.text}")
+            binding.checkBoxContainer.removeView(chkBox)
         }
-    }
-
-    private fun getColor(setNumber: Int): Int{
-        return predefinedColors[setNumber % predefinedColors.size]
     }
 
     private fun setupObservers() {
         homeViewModel.dataSets.observe(viewLifecycleOwner, Observer { dataSets ->
-            fillChart(dataSets)
+            plotCsvChart(dataSets, isIgnoreZeros)
             invalidateChart()
         })
 
+        binding.ignoreZeroCheckBox.setOnCheckedChangeListener { _, isChecked ->
+            binding.lineChart.hideHighlight()
+            plotCsvChart(homeViewModel.dataSets.value, !isChecked)
+            invalidateChart()
+        }
+
         homeViewModel.removedEntry.observe(viewLifecycleOwner, Observer { entry ->
             binding.lineChart.data?.dataSets?.forEach{ ds->
+                Log.i("removedEntry.observe", "${ds.label}: xAxisValue: ${entry.dateTime}")
                 ds.removeEntryByXValue(entry.dateTime.toEpoch()) }
             invalidateChart()
         })
     }
 
-    private fun fillChart(dataSets: Map<String, List<CsvDataValue>>?) {
+    private fun plotCsvChart(dataSets: Map<String, List<CsvDataValue>>?, ignoreZeros: Boolean) {
         try{
-            dataSets?.toList()?.forEachIndexed { idx, (name, data) ->
-                val lineDataSet = dataSetsMap.getOrPut(name) {
-                    LineDataSet(mutableListOf(), name)
+            val chart = binding.lineChart
+            chart.data?.clearValues()
+            dataSets?.toList()?.forEachIndexed { idxForColor, (name, data) ->
+                val csvData = csvDataMap.getOrPut(name) { CsvData() }
+
+                csvData.clear()
+                data.toList().forEach { csvValue ->
+                    csvData.values.add(csvValue)
                 }
 
-                lineDataSet.clear()
+                DetectCycles.analyzeSimple(csvData, ignoreZeros, showCycleTraces = false)
 
-                lineDataSet.lineWidth = 3f
-                lineDataSet.color = getColor(idx)
-                lineDataSet.setCircleColor(getColor(idx))
-                lineDataSet.valueTextColor = Color.WHITE
-
-                if(lineDataSet.isVisible) {
-                    data.toList().forEach { csvValue ->
-                        val entry = Entry(csvValue.dateTime.toEpoch(), csvValue.voltage)
-                        entry.data = csvValue
-                        lineDataSet.addEntry(entry)
-                    }
+                csvData.relayVisible = false
+                csvData.cyclesVisible = false
+                csvData.voltageColor = getColor(idxForColor)
+                csvData.voltageLabel = name
+                if(LifeTimeChartBuilder().build(context, chart, csvData, ignoreZeros, isDarkTheme())){
+                    addCheckbox(name, csvData.voltageVisible, csvData.voltageColor, csvData)
+                }else{
+                    csvDataMap.remove(name)
+                    removeCheckBox(name)
                 }
-
-                if(!binding.lineChart.data.isSetExistsByLabel(name, true)){
-                    binding.lineChart.data?.addDataSet(lineDataSet)
-                    addCheckboxForDataSet(name, binding.lineChart)
-                }
-
-                recalculateYAxis(binding.lineChart)
             }
         }catch(e: Exception){
             Log.e("HomeFragment", "dataSets?.toList()?.forEachIndexed", e)
@@ -169,12 +148,12 @@ class HomeFragment : Fragment() {
 
         binding.applyButton.setOnClickListener {
             val port = binding.portTextField.text.toString().toIntOrNull() ?: UdpListener.port
-            val dataLimit = binding.limitTextField.text.toString().toIntOrNull() ?: UdpListener.dataLimit
+            val dataLimit = binding.limitTextField.text.toString().toIntOrNull() ?: 0
             UdpListener.initialize(port, dataLimit)
             UdpListener.clear()
             homeViewModel.clear()
-            setupChart()
-            fillChart(homeViewModel.dataSets.value)
+            clearCheckBoxes()
+            plotCsvChart(homeViewModel.dataSets.value, isIgnoreZeros)
             invalidateChart()
 
             updateControls()
@@ -198,52 +177,32 @@ class HomeFragment : Fragment() {
         return UdpListener.isListening
     }
 
-    private fun recalculateYAxis(chart: LineChart) {
-        val allVisibleEntries = chart.data.dataSets
-            .filter { it.isVisible } // Include only visible data sets
-            .flatMap  { dataSet ->
-                (0 until dataSet.entryCount).map { dataSet.getEntryForIndex(it) }
-            } // Collect all entries from visible data sets
-
-        val margin = 0.1f
-
-        if (allVisibleEntries.isNotEmpty()) {
-            val minY = allVisibleEntries.minOf { it.y }
-            val maxY = allVisibleEntries.maxOf { it.y }
-
-            chart.axisLeft.axisMinimum = chooseValue(minY - margin < 0f, 0f, minY - margin)
-            chart.axisLeft.axisMaximum = maxY + margin
-
-            chart.axisRight.axisMinimum = chooseValue(minY - margin < 0f, 0f, minY - margin)
-            chart.axisRight.axisMaximum = maxY + margin
-        } else {
-            // Reset axis if no data is visible
-            chart.axisLeft.resetAxisMaximum()
-            chart.axisLeft.resetAxisMinimum()
-
-            chart.axisRight.resetAxisMaximum()
-            chart.axisRight.resetAxisMinimum()
+    private fun addCheckbox(text: String, isChecked: Boolean, color: Int, csvData: CsvData) {
+        var checkBox = binding.checkBoxContainer.findViewById<CheckBox>(getCheckBoxId(text))
+        if(checkBox == null) {
+            checkBox = CheckBox(context).apply {
+                id = getCheckBoxId(text)
+                this.text = text
+                this.isChecked = isChecked
+                tag = getCheckBoxIdStr(text)
+                buttonTintList = ColorStateList.valueOf(color)
+            }
+            binding.checkBoxContainer.addView(checkBox)
+        }
+        checkBox.setOnCheckedChangeListener { _, isChecked ->
+            csvData.voltageVisible = isChecked
+            binding.lineChart.hideHighlight()
+            plotCsvChart(homeViewModel.dataSets.value, isIgnoreZeros)
+            invalidateChart()
         }
     }
 
-    private fun addCheckboxForDataSet(setName: String, chart: LineChart) {
-        val dataSet = dataSetsMap[setName]
-        Log.i("HomeFragment", "addCheckboxForDataSet: $setName isVisible: ${dataSet?.isVisible}")
-        if(dataSet != null) {
-            val checkBox = CheckBox(context).apply {
-                text = setName
-                isChecked = dataSet.isVisible
-                buttonTintList = ColorStateList.valueOf(dataSet.color)
-                setOnCheckedChangeListener { _, isChecked ->
-                    dataSet.isVisible = isChecked
-                    if(!isChecked){
-                        dataSet.clear()
-                    }
-                    fillChart(homeViewModel.dataSets.value)
-                    invalidateChart()
-                }
-            }
-            binding.checkBoxContainer.addView(checkBox)
+    private fun getCheckBoxId(text: String): Int = getCheckBoxIdStr(text).hashCode()
+    private fun getCheckBoxIdStr(text: String): String = "$CHECK_BOX_ID$text"
+
+    private  fun removeCheckBox(text: String){
+        binding.checkBoxContainer.findViewById<CheckBox>(getCheckBoxId(text))?.let {
+            binding.checkBoxContainer.removeView(it)
         }
     }
 
