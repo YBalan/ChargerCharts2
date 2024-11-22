@@ -15,6 +15,7 @@ import android.widget.CheckBox
 import com.example.chargercharts2.R
 import com.example.chargercharts2.utils.*
 import android.widget.LinearLayout
+import androidx.core.view.children
 import com.example.chargercharts2.BuildConfig.IS_DEBUG_BUILD
 import com.example.chargercharts2.analytics.DetectCycles
 import com.example.chargercharts2.chartbuilders.LifeTimeChartBuilder
@@ -23,11 +24,14 @@ import com.example.chargercharts2.models.CsvDataValue
 
 class HomeFragment : Fragment() {
 
+    private val CHECK_BOX_ID = "checkBoxId_"
+
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
     private val homeViewModel: HomeViewModel by viewModels()
 
     private val csvDataMap get() = homeViewModel.csvDataMap
+    private val isIgnoreZeros: Boolean get() = !binding.ignoreZeroCheckBox.isChecked
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -45,7 +49,7 @@ class HomeFragment : Fragment() {
 
         updateControls()
         clearCheckBoxes()
-        plotCsvChart(homeViewModel.dataSets.value)
+        plotCsvChart(homeViewModel.dataSets.value, isIgnoreZeros)
         setupObservers()
         setupSettingsAndApplyButton()
     }
@@ -71,14 +75,26 @@ class HomeFragment : Fragment() {
     }
 
     private fun clearCheckBoxes() {
-        binding.checkBoxContainer.removeAllViews()
+        binding.checkBoxContainer.children.filter { view ->
+            Log.i("clearCheckBoxes", view.tag.toString())
+            view.tag.toString().startsWith(CHECK_BOX_ID)
+        }.toList().forEach { chkBox ->
+            Log.i("clearCheckBoxes", "${(chkBox as? CheckBox)?.text}")
+            binding.checkBoxContainer.removeView(chkBox)
+        }
     }
 
     private fun setupObservers() {
         homeViewModel.dataSets.observe(viewLifecycleOwner, Observer { dataSets ->
-            plotCsvChart(dataSets)
+            plotCsvChart(dataSets, isIgnoreZeros)
             invalidateChart()
         })
+
+        binding.ignoreZeroCheckBox.setOnCheckedChangeListener { _, isChecked ->
+            binding.lineChart.hideHighlight()
+            plotCsvChart(homeViewModel.dataSets.value, !isChecked)
+            invalidateChart()
+        }
 
         homeViewModel.removedEntry.observe(viewLifecycleOwner, Observer { entry ->
             binding.lineChart.data?.dataSets?.forEach{ ds->
@@ -88,8 +104,7 @@ class HomeFragment : Fragment() {
         })
     }
 
-    private fun plotCsvChart(dataSets: Map<String, List<CsvDataValue>>?) {
-        val ignoreZeros = false
+    private fun plotCsvChart(dataSets: Map<String, List<CsvDataValue>>?, ignoreZeros: Boolean) {
         try{
             val chart = binding.lineChart
             chart.data?.clearValues()
@@ -133,12 +148,12 @@ class HomeFragment : Fragment() {
 
         binding.applyButton.setOnClickListener {
             val port = binding.portTextField.text.toString().toIntOrNull() ?: UdpListener.port
-            val dataLimit = binding.limitTextField.text.toString().toIntOrNull() ?: UdpListener.dataLimit
+            val dataLimit = binding.limitTextField.text.toString().toIntOrNull() ?: 0
             UdpListener.initialize(port, dataLimit)
             UdpListener.clear()
             homeViewModel.clear()
             clearCheckBoxes()
-            plotCsvChart(homeViewModel.dataSets.value)
+            plotCsvChart(homeViewModel.dataSets.value, isIgnoreZeros)
             invalidateChart()
 
             updateControls()
@@ -163,25 +178,27 @@ class HomeFragment : Fragment() {
     }
 
     private fun addCheckbox(text: String, isChecked: Boolean, color: Int, csvData: CsvData) {
-        val existing = binding.checkBoxContainer.findViewById<CheckBox>(getCheckBoxId(text))
-        if(existing == null) {
-            val checkBox = CheckBox(context).apply {
+        var checkBox = binding.checkBoxContainer.findViewById<CheckBox>(getCheckBoxId(text))
+        if(checkBox == null) {
+            checkBox = CheckBox(context).apply {
                 id = getCheckBoxId(text)
                 this.text = text
                 this.isChecked = isChecked
+                tag = getCheckBoxIdStr(text)
                 buttonTintList = ColorStateList.valueOf(color)
-                setOnCheckedChangeListener { _, isChecked ->
-                    csvData.voltageVisible = isChecked
-                    binding.lineChart.hideHighlight()
-                    plotCsvChart(homeViewModel.dataSets.value)
-                    invalidateChart()
-                }
             }
             binding.checkBoxContainer.addView(checkBox)
         }
+        checkBox.setOnCheckedChangeListener { _, isChecked ->
+            csvData.voltageVisible = isChecked
+            binding.lineChart.hideHighlight()
+            plotCsvChart(homeViewModel.dataSets.value, isIgnoreZeros)
+            invalidateChart()
+        }
     }
 
-    private fun getCheckBoxId(text: String): Int = "checkBoxId_$text".hashCode()
+    private fun getCheckBoxId(text: String): Int = getCheckBoxIdStr(text).hashCode()
+    private fun getCheckBoxIdStr(text: String): String = "$CHECK_BOX_ID$text"
 
     private  fun removeCheckBox(text: String){
         binding.checkBoxContainer.findViewById<CheckBox>(getCheckBoxId(text))?.let {

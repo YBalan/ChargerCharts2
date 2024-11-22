@@ -16,7 +16,6 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import com.example.chargercharts2.analytics.DetectCycles
 import com.example.chargercharts2.chartbuilders.HistoryChartBuilder
 import com.example.chargercharts2.databinding.FragmentDashboardBinding // Adjust with actual binding class
 import com.example.chargercharts2.models.CsvData
@@ -24,13 +23,13 @@ import com.example.chargercharts2.utils.hideHighlight
 import com.example.chargercharts2.utils.isDarkTheme
 import com.example.chargercharts2.utils.isLandscape
 import com.example.chargercharts2.utils.updateViewMarginBottom
-import com.github.mikephil.charting.data.LineData
 
 class DashboardFragment : Fragment() {
 
     private var _binding: FragmentDashboardBinding? = null
     private val binding get() = _binding!!
     private val viewModel: DashboardViewModel by viewModels()
+    val isIgnoreZeros: Boolean get() = !binding.ignoreZeroCheckBox.isChecked
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -51,7 +50,7 @@ class DashboardFragment : Fragment() {
         }
 
         viewModel.csvChartData.observe(viewLifecycleOwner) { csvData ->
-            updateControls(plotCsvChart(csvData, !binding.ignoreZeroCheckBox.isChecked))
+            updateControls(plotCsvChart(csvData, isIgnoreZeros))
         }
 
         viewModel.fileName.observe(viewLifecycleOwner){ fileName ->

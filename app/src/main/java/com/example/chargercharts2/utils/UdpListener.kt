@@ -124,8 +124,8 @@ object UdpListener {
                     val voltageFloat = voltage.toFloat()
                     val relayFloat = relay.toFloat()
 
-                    Log.i("UdpListener", "dataList.size: ${dataList.size}")
-                    if (dataList.size >= _dataLimit) {
+                    Log.i("UdpListener", "dataLimit: $_dataLimit; dataList.size: ${dataList.size}")
+                    if (_dataLimit > 0 && dataList.size >= _dataLimit) {
                         //dataList.removeAt(0)
                         removeAtForAllDataSets(0)
                     }
@@ -216,7 +216,7 @@ object UdpListener {
                 val voltage3 = random.nextInt(16, 24).toFloat()
                 val name3 = "ChargerCharts|16.5V|"
 
-                val voltage4 = random.nextInt(8, 10).toFloat()
+                val voltage4 = random.nextInt(-1, 10).toFloat()
                 val name4 = "ChargerCharts|8.0V|"
 
                 // Create a message to send
