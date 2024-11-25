@@ -6,6 +6,7 @@ import com.example.chargercharts2.BuildConfig.IS_DEBUG_BUILD
 import com.example.chargercharts2.R
 import com.example.chargercharts2.models.CsvData
 import com.example.chargercharts2.models.CsvDataValue
+import com.example.chargercharts2.models.CycleType
 import com.example.chargercharts2.utils.CustomMarkerView
 import com.example.chargercharts2.utils.CustomXValueFormatter
 import com.example.chargercharts2.utils.CustomYRightValueFormatter
@@ -43,9 +44,9 @@ open class ChartBuilderBase {
                 relayEntry.data = csvDataValue
                 relay.add(relayEntry)
 
-                csvDataValue.cycle?.let {
-                    if(it.value != null) {
-                        val cycleEntry = Entry(dt, it.value ?: 0f)
+                csvDataValue.cycle?.let { cycle ->
+                    cycle.value?.let { value ->
+                        val cycleEntry = Entry(dt, csvData.getValueForCycle(cycle.type) ?: 0f)
                         cycleEntry.data = csvDataValue
                         cycles.add(cycleEntry)
                     }

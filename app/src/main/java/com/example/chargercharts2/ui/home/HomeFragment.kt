@@ -108,21 +108,27 @@ class HomeFragment : Fragment() {
         try{
             val chart = binding.lineChart
             chart.data?.clearValues()
+            chart.data = null
+            val visibleCount = csvDataMap.count { s -> s.value.voltageVisible }
+            val showRelay = visibleCount == 1
+            val showCycles = visibleCount == 1
             dataSets?.toList()?.forEachIndexed { idxForColor, (name, data) ->
                 val csvData = csvDataMap.getOrPut(name) { CsvData() }
 
                 csvData.clear()
                 data.toList().forEach { csvValue ->
-                    csvData.values.add(csvValue)
+                    csvData.addValue(csvValue)
                 }
 
                 DetectCycles.analyzeSimple(csvData, ignoreZeros, showCycleTraces = false)
 
-                csvData.relayVisible = false
-                csvData.cyclesVisible = false
+                csvData.relayVisible = csvData.voltageVisible && showRelay
+                csvData.cyclesVisible = csvData.voltageVisible && showCycles
                 csvData.voltageColor = getColor(idxForColor)
                 csvData.voltageLabel = name
-                if(LifeTimeChartBuilder().build(context, chart, csvData, ignoreZeros, isDarkTheme())){
+
+                if(LifeTimeChartBuilder().build(context, chart, csvData, ignoreZeros, isDarkTheme(),
+                    addSetsIfNotVisible = true)){
                     addCheckbox(name, csvData.voltageVisible, csvData.voltageColor, csvData)
                 }else{
                     csvDataMap.remove(name)

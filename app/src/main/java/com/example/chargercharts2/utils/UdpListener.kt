@@ -3,6 +3,7 @@ package com.example.chargercharts2.utils
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
+import com.example.chargercharts2.BuildConfig.IS_DEBUG_BUILD
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -72,8 +73,8 @@ object UdpListener {
         startListening()
 
         var ip = getLocalIpAddress()
-        if(ip.startsWith("10.")) {
-            mockIfInDebug()
+        if(IS_DEBUG_BUILD && ip.startsWith("10.")) {
+            mockUDPDataSenders()
         }
     }
 
@@ -189,7 +190,7 @@ object UdpListener {
         timer = null
     }
 
-    private fun mockIfInDebug()
+    private fun mockUDPDataSenders()
     {
         // Schedule a task to run every minute (60000 milliseconds)
         closeTimer()

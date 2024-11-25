@@ -17,11 +17,13 @@ class DashboardViewModel : ViewModel() {
     private val _fileName = MutableLiveData<String>()
     val fileName: LiveData<String> get() = _fileName
 
-    fun parseCsvFile(context: Context, fileUri: Uri) {
+    fun parseCsvFile(context: Context, fileUri: Uri) : Boolean {
         val csvData = CsvData.parseCsvFile(context, fileUri)
         DetectCycles.analyzeSimple(csvData, ignoreZeros = true)
         _csvChartData.postValue(csvData)
         _fileName.postValue(getFileNameFromUri(context, fileUri) ?: "File Name")
+
+        return !csvData.values.isEmpty()
     }
 
     fun clear(){
