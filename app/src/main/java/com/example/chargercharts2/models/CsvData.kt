@@ -27,6 +27,12 @@ data class CsvDataValue(
     val relay: Float,
     var cycle: Cycle? = null
 ){
+    fun setCycle(cycle: Cycle?, csvData: CsvData){
+        this.cycle = cycle
+        if(cycle != null)
+            this.cycle?.value = csvData.getValueForCycle(cycle.type)
+    }
+
     companion object {
         fun highlightValueFormatter(data: Any?, dataSetName: String?): String? {
             val dtFormatter = DateTimeFormatter.ofPattern(CsvData.DATE_TIME_TOOLTIP_FORMAT)
@@ -73,6 +79,8 @@ data class CsvData(
     var cycleVOffset: Float = 0.2f,
 ) {
     fun clear(){
+        minV = 0.0f
+        maxV = 0.0f
         values.clear()
         cycles.clear()
     }
@@ -115,6 +123,12 @@ data class CsvData(
         return if (minV - cycleVOffset < 0f) 0f else minV - cycleVOffset
     }
 
+    fun addValue(csvValue: CsvDataValue){
+        maxV = if(maxV < csvValue.voltage) csvValue.voltage else maxV
+        minV = if(minV == 0.0f || minV > csvValue.voltage) csvValue.voltage else minV
+        values.add(csvValue)
+    }
+
     companion object {
         const val DATE_TIME_CSV_CHART_FORMAT: String = "MM-dd-yy HH:mm"
         const val DATE_TIME_UDP_CHART_FORMAT: String = "HH:mm"
@@ -122,9 +136,7 @@ data class CsvData(
         const val DATE_TIME_TOOLTIP_FORMAT: String = "HH:mm:ss MM-dd-yy"
 
         fun parseCsvFile(context: Context, uri: Uri): CsvData {
-            val csvValues = mutableListOf<CsvDataValue>()
-            val cycles = mutableListOf<Cycle>()
-            val csvData = CsvData(0.0f, 0.0f, csvValues, cycles)
+            val csvData = CsvData()
 
             val rows = try {
                 // Open input stream from the content resolver
@@ -173,11 +185,8 @@ data class CsvData(
                     val voltage = row[1].trim().toFloat()
                     val relay = row[2].trim().toFloat()
 
-                    csvData.maxV = if(csvData.maxV < voltage) voltage else csvData.maxV
-                    csvData.minV = if(csvData.minV == 0.0f || csvData.minV > voltage) voltage else csvData.minV
-
                     // Add to the result list
-                    csvValues.add(CsvDataValue(dateTime, voltage, relay))
+                    csvData.addValue(CsvDataValue(dateTime, voltage, relay))
                 } catch (e: NumberFormatException) {
                     Log.e("parseCsvFile", "RowIndex: $rowIndex text: '$dateTimeString'")
                     // Handle parsing errors for value1 or value2

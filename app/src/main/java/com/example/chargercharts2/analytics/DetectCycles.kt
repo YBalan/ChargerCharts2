@@ -98,8 +98,12 @@ object DetectCycles {
     }
 
     fun analyzeSimple(csvData: CsvData, ignoreZeros: Boolean,
-                      windowSize: Int = 7, threshold: Float = 0.0f,
-                      showCycleTraces: Boolean = true){
+                      windowSize: Int = 7, threshold: Float = 0.11f,
+                      showCycleTraces: Boolean = true,
+                      useMedian: Boolean = true){
+
+        if (csvData.values.size < windowSize) return
+
         val cycles = mutableListOf<Cycle>()
         // Filter values based on ignoreZeros
         val filteredValues = if (ignoreZeros) {
@@ -108,39 +112,49 @@ object DetectCycles {
             csvData.values
         }
 
-        val firstValue = filteredValues.firstOrNull() ?: CsvDataValue(LocalDateTime.now(), 0f, 0f)
+        val firstValue = filteredValues.firstOrNull()
+            ?: CsvDataValue(LocalDateTime.now(), 0f, 0f)
 
-        val movingData =  fillMovingData(filteredValues, windowSize, useMedian = true)
+        val movingData =  fillMovingData(filteredValues, windowSize, useMedian)
         var lastMovingValue = movingData.firstOrNull() ?: firstValue.voltage
 
-        var currentCycle = Cycle(firstValue.dateTime)
-        for ((index, csvDataValue) in filteredValues.withIndex()) {
-            csvDataValue.cycle = currentCycle
+        //val firstWindow = filteredValues.slice(0 until 0 + windowSize)
+        //val firstChange = firstWindow.first().voltage - firstWindow.last().voltage
+        //val firstCycleType = if(firstChange <= 0) CycleType.Discharging else CycleType.Charging
 
-            if (index < windowSize - 1) continue
-            val movingValue = movingData[index - windowSize + 1]
+        var currentCycle = Cycle(firstValue.dateTime, type = CycleType.Floating)
+        for ((index, csvDataValue) in filteredValues.withIndex()) {
+            csvDataValue.setCycle(currentCycle, csvData)
+
+            //if (index < windowSize - 1) continue
+            //val movingValue = movingData[index - windowSize + 1]
+            val movingValue = movingData[index]
 
             val change = movingValue - lastMovingValue
+
             val currentCycleType = when {
                 change > threshold -> CycleType.Charging
                 change < -threshold -> CycleType.Discharging
-                abs(change) <= threshold -> CycleType.Floating
+                //abs(change) <= (threshold - 0.01f) -> CycleType.Floating
                 else -> CycleType.Unknown
             }
 
-            if(currentCycleType != currentCycle.type){
+            if(currentCycleType != CycleType.Unknown &&
+                currentCycleType != currentCycle.type){
+
                 currentCycle.end = csvDataValue.dateTime
                 cycles.add(currentCycle)
 
                 currentCycle = Cycle(csvDataValue.dateTime, type = currentCycleType)
-                csvDataValue.cycle = currentCycle
-                csvDataValue.cycle?.value = csvData.getValueForCycle(currentCycleType)
+                csvDataValue.setCycle(currentCycle, csvData)
             }
 
             lastMovingValue = movingValue
         }
 
         currentCycle.end = filteredValues.lastOrNull()?.dateTime
+        if(!cycles.contains(currentCycle))
+            cycles.add(currentCycle)
 
         csvData.cycles.clear()
         csvData.cycles.addAll(cycles)
@@ -149,7 +163,7 @@ object DetectCycles {
             for (cycle in csvData.cycles) {
                 Log.i(
                     "Analytics",
-                    "${cycle.type}: start: ${cycle.start}; end: ${cycle.end}; duration: ${cycle.duration}; val: ${cycle.avgValue}"
+                    "${cycle.type}: start: ${cycle.start}; end: ${cycle.end}; duration: ${cycle.duration}; valAvg: ${cycle.avgValue} valMed: ${cycle.medValue}"
                 )
             }
         }
@@ -158,6 +172,9 @@ object DetectCycles {
     fun fillMovingData(csvData: List<CsvDataValue>, windowSize: Int, useMedian: Boolean = true)
         : List<Float>{
         val movingData = mutableListOf<Float>()
+        val window = csvData.take(windowSize)
+        val movingValue = if (useMedian) calcMedian(window) else calcAverage(window)
+        movingData.addAll(window.map { movingValue })
 
         // Ensure enough data points remain after filtering
         if (csvData.size < windowSize) return movingData
@@ -165,8 +182,8 @@ object DetectCycles {
         // Calculate moving median or average for the voltage values
         for (i in 0 until csvData.size - windowSize + 1) {
             val window = csvData.slice(i until i + windowSize)
-            val median = if (useMedian) calcMedian(window) else calcAverage(window)
-            movingData.add(median)
+            val movingValue = if (useMedian) calcMedian(window) else calcAverage(window)
+            movingData.add(movingValue)
         }
 
         return movingData

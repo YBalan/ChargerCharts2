@@ -91,19 +91,17 @@ class DashboardFragment : Fragment() {
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
                 result.data?.data?.let { uri ->
-                    viewModel.parseCsvFile(requireContext(), uri)
-                    //binding.fileNameTextView.text = getFileNameFromUri(requireContext(), uri)
+                    if(!viewModel.parseCsvFile(requireContext(), uri)){
+                        binding.lineChart.data = null
+                        binding.lineChart.invalidate()
+                        Toast.makeText(context, "No data available", Toast.LENGTH_SHORT).show()
+                    }
                 } ?: Toast.makeText(context, "File selection error", Toast.LENGTH_SHORT).show()
             }
         }
 
     private fun plotCsvChart(csvData: CsvData?, ignoreZeros: Boolean) : Boolean {
-        if (csvData == null || csvData.values.isEmpty()) {
-            //Toast.makeText(context, "Failed to plot data", Toast.LENGTH_SHORT).show()
-            binding.lineChart.data = null
-            binding.lineChart.invalidate()
-            return false
-        }
+        if (csvData == null || csvData.values.isEmpty()) return false
 
         binding.lineChart.hideHighlight()
         if(HistoryChartBuilder().build(context, binding.lineChart, csvData, ignoreZeros, isDarkTheme())){
@@ -138,12 +136,7 @@ class DashboardFragment : Fragment() {
             }
 
             return true
-        }else{
-            binding.lineChart.data = null
-            binding.lineChart.invalidate()
-            Toast.makeText(context, "No data available", Toast.LENGTH_SHORT).show()
         }
-
         return false
     }
 
