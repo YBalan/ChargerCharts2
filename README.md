@@ -23,4 +23,6 @@ Download now to keep track of your device’s charging habits and improve your b
 
 ![History1](img/history_statistic_with_cycles1.png)
 ![History2](img/history_statistic_with_cycles2.png)
-![Interactive2](img/interactive1.png)
+![Interactive1](img/interactive1.jpg)
+![Interactive2](img/interactive2.jpg)
+![Interactive3](img/interactive3.jpg)

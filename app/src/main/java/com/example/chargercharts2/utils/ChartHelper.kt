@@ -33,14 +33,14 @@ val UDPSenderColorSchemasDark = listOf<ColorSchema>(
     ColorSchema(Color.LTGRAY, Color.GRAY, Color.WHITE),
 )
 val UDPSenderColorSchemasWhite = listOf<ColorSchema>(
-    ColorSchema(Color.RED, Color.GRAY, Color.BLACK),
-    ColorSchema(Color.BLUE, Color.GRAY, Color.BLACK),
-    ColorSchema(Color.GREEN,Color.GRAY, Color.BLACK),
-    ColorSchema(Color.MAGENTA,Color.GRAY, Color.BLACK),
-    ColorSchema(Color.CYAN,Color.GRAY, Color.BLACK),
-    ColorSchema(Color.YELLOW,Color.GRAY, Color.BLACK),
-    ColorSchema(Color.DKGRAY,Color.GRAY, Color.BLACK),
-    ColorSchema(Color.LTGRAY, Color.GRAY, Color.BLACK),
+    ColorSchema(Color.RED, Color.GRAY, Color.RED),
+    ColorSchema(Color.BLUE, Color.GRAY, Color.RED),
+    ColorSchema(Color.GREEN,Color.GRAY, Color.RED),
+    ColorSchema(Color.MAGENTA,Color.GRAY, Color.RED),
+    ColorSchema(Color.CYAN,Color.GRAY, Color.RED),
+    ColorSchema(Color.YELLOW,Color.GRAY, Color.RED),
+    ColorSchema(Color.DKGRAY,Color.GRAY, Color.RED),
+    ColorSchema(Color.LTGRAY, Color.GRAY, Color.RED),
 )
 
 fun getColorSchema(setNumber: Int, isDarkTheme: Boolean): ColorSchema{
