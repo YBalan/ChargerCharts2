@@ -19,10 +19,12 @@ import androidx.fragment.app.activityViewModels
 import com.example.chargercharts2.chartbuilders.HistoryChartBuilder
 import com.example.chargercharts2.databinding.FragmentDashboardBinding // Adjust with actual binding class
 import com.example.chargercharts2.models.CsvData
+import com.example.chargercharts2.utils.getFileExtensionFromUri
 import com.example.chargercharts2.utils.hideHighlight
 import com.example.chargercharts2.utils.isDarkTheme
 import com.example.chargercharts2.utils.isLandscape
 import com.example.chargercharts2.utils.updateViewMarginBottom
+import java.io.File
 
 class DashboardFragment : Fragment() {
 
@@ -91,7 +93,13 @@ class DashboardFragment : Fragment() {
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
                 result.data?.data?.let { uri ->
-                    if(!viewModel.parseCsvFile(requireContext(), uri)){
+                    val ext = getFileExtensionFromUri(context, uri)
+                    Log.i("filePickerLauncher", "$uri; path: ${uri.path}; ext: $ext")
+                    if (ext?.lowercase() != "csv") {
+                        Toast.makeText(context, "Selected file is not *.csv", Toast.LENGTH_SHORT).show()
+                        return@let
+                    }
+                    if (!viewModel.parseCsvFile(requireContext(), uri)) {
                         binding.lineChart.data = null
                         binding.lineChart.invalidate()
                         Toast.makeText(context, "No data available", Toast.LENGTH_SHORT).show()
