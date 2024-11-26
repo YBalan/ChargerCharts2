@@ -13,10 +13,10 @@ fun getLocalIpAddress(): String {
         ?.hostAddress ?: "Unknown"
 }
 
-fun getFileNameFromUri(context: Context, uri: Uri): String? {
+fun getFileNameFromUri(context: Context?, uri: Uri): String? {
     var fileName: String? = null
     if (uri.scheme == "content") {
-        val cursor: Cursor? = context.contentResolver.query(uri, null, null, null, null)
+        val cursor: Cursor? = context?.contentResolver?.query(uri, null, null, null, null)
         cursor?.use {
             val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
             if (nameIndex != -1 && it.moveToFirst()) {
@@ -27,4 +27,9 @@ fun getFileNameFromUri(context: Context, uri: Uri): String? {
         fileName = uri.lastPathSegment
     }
     return fileName
+}
+
+fun getFileExtensionFromUri(context: Context?, uri: Uri): String? {
+    val fileName = getFileNameFromUri(context, uri)
+    return fileName?.substringAfterLast(".", "")
 }

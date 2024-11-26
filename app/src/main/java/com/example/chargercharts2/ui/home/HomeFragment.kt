@@ -122,7 +122,7 @@ class HomeFragment : Fragment() {
             val chart = binding.lineChart
             chart.data?.clearValues()
             chart.data = null
-            val visibleCount = csvDataMap.count { s -> s.value.voltageVisible }
+            var visibleCount = csvDataMap.count { s -> s.value.voltageVisible }
             val showRelay = visibleCount == 1
             val showCycles = visibleCount == 1
             dataSets?.toList()?.forEachIndexed { idxForColor, (name, data) ->
@@ -151,14 +151,15 @@ class HomeFragment : Fragment() {
                         addSetsIfNotVisible = true
                     )
                 ) {
-                    chart.legend.isEnabled =
-                        IS_DEBUG_BUILD || csvData.relayVisible || csvData.cyclesVisible
                     addCheckbox(name, csvData.voltageVisible, csvData.voltageColor, csvData)
                 } else {
                     csvDataMap.remove(name)
                     removeCheckBox(name)
                 }
             }
+            val visibleData = csvDataMap.filter { s -> s.value.voltageVisible }
+            val singleVisibleData = if(visibleData.count() == 1) visibleData.entries.first().value else null
+            chart.legend.isEnabled = singleVisibleData?.relayVisible == true || singleVisibleData?.cyclesVisible == true
         } catch (e: Exception) {
             Log.e("HomeFragment", "dataSets?.toList()?.forEachIndexed", e)
             if (IS_DEBUG_BUILD) {
