@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.res.Configuration
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.ColorUtils
 import androidx.fragment.app.Fragment
 
@@ -15,9 +16,9 @@ fun Fragment.isLandscape(): Boolean{
     return resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 }
 
-/*fun <T> chooseValue(condition: Boolean, trueValue: T, falseValue: T): T {
-    return if (condition) trueValue else falseValue
-}*/
+fun AppCompatActivity.isLandscape(): Boolean{
+    return resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+}
 
 fun updateViewMarginBottom(view: View, bottomMarginDp: Int, context: Context?) {
     val layoutParams = view.layoutParams as? ViewGroup.MarginLayoutParams

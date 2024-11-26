@@ -29,7 +29,7 @@ object UdpListener {
     private var _port = DEFAULT_PORT // Default port; can be set by calling `initialize(port)`
     val port: Int get() = _port
     private var _isListening = false
-    val isListening: Boolean get() = _isListening
+    val isListening = MutableLiveData<Boolean>()
     private var _dataLimit = DEFAULT_DATA_LIMIT
     val dataLimit: Int get() = _dataLimit
 
@@ -83,7 +83,12 @@ object UdpListener {
         listeningJob?.cancel()  // This will cancel the coroutine if it is active
         listeningJob = null      // Optionally, clear the job reference
         closeTimer()
-        _isListening = false
+        setIsListening(false)
+    }
+
+    private fun setIsListening(value: Boolean){
+        _isListening = value
+        isListening.postValue(value)
     }
 
     private fun startListening() {
@@ -94,7 +99,7 @@ object UdpListener {
 
                 val buffer = ByteArray(1024)
                 val packet = DatagramPacket(buffer, buffer.size)
-                _isListening = true
+                setIsListening(true)
 
                 var ip = getLocalIpAddress()
                 var port = socket.localPort
@@ -141,7 +146,7 @@ object UdpListener {
                 Log.e("UdpListener", "Error receiving UDP packet", e)
                 postMessage(e.message, isError = true)
             } finally {
-                _isListening = false
+                setIsListening(false)
                 if (!socket.isClosed)
                     socket.close()
                 closeTimer()
@@ -221,10 +226,10 @@ object UdpListener {
                 val name4 = "ChargerCharts|8.0V|"
 
                 // Create a message to send
-                val message1 = "$name1,$dateTime,$voltage1,${random.nextInt(0,1)}".toByteArray()
-                val message2 = "$name2,$dateTime,$voltage2,${random.nextInt(0,1)}".toByteArray()
-                val message3 = "$name3,$dateTime,$voltage3,${random.nextInt(0,1)}".toByteArray()
-                val message4 = "$name4,$dateTime,$voltage4,${random.nextInt(0,1)}".toByteArray()
+                val message1 = "$name1,$dateTime,$voltage1,${random.nextInt(0,2)}".toByteArray()
+                val message2 = "$name2,$dateTime,$voltage2,${random.nextInt(0,2)}".toByteArray()
+                val message3 = "$name3,$dateTime,$voltage3,${random.nextInt(0,2)}".toByteArray()
+                val message4 = "$name4,$dateTime,$voltage4,${random.nextInt(0,2)}".toByteArray()
 
                 // Create a DatagramPacket to send the message
                 val packet1 = DatagramPacket(message1, message1.size, address, _port)

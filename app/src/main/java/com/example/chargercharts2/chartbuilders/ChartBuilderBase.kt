@@ -121,6 +121,5 @@ open class ChartBuilderBase {
         if(!IS_DEBUG_BUILD){
             chart.legend.isEnabled = false
         }
-
     }
 }

@@ -8,7 +8,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import com.example.chargercharts2.databinding.FragmentHomeBinding
 import android.widget.CheckBox
@@ -16,19 +15,19 @@ import com.example.chargercharts2.R
 import com.example.chargercharts2.utils.*
 import android.widget.LinearLayout
 import androidx.core.view.children
+import androidx.fragment.app.activityViewModels
 import com.example.chargercharts2.BuildConfig.IS_DEBUG_BUILD
 import com.example.chargercharts2.analytics.DetectCycles
 import com.example.chargercharts2.chartbuilders.LifeTimeChartBuilder
 import com.example.chargercharts2.models.CsvData
 import com.example.chargercharts2.models.CsvDataValue
 
+private const val CHECK_BOX_ID = "checkBoxId_"
+
 class HomeFragment : Fragment() {
-
-    private val CHECK_BOX_ID = "checkBoxId_"
-
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
-    private val homeViewModel: HomeViewModel by viewModels()
+    private val homeViewModel: HomeViewModel by activityViewModels()
 
     private val csvDataMap get() = homeViewModel.csvDataMap
     private val isIgnoreZeros: Boolean get() = !binding.ignoreZeroCheckBox.isChecked
@@ -61,17 +60,14 @@ class HomeFragment : Fragment() {
     }
 
     private fun updateControls() {
-        binding.checkBoxContainer.orientation = if (isLandscape()) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
-        binding.settings.visibility = if(isLandscape() && isStarted()) View.GONE else View.VISIBLE
+        binding.checkBoxContainer.orientation =
+            if (isLandscape()) LinearLayout.HORIZONTAL else LinearLayout.VERTICAL
 
-        if(isLandscape()) {
+        if (isLandscape()) {
             updateViewMarginBottom(binding.checkBoxContainer, 8, context)
-        }
-        else{
+        } else {
             updateViewMarginBottom(binding.checkBoxContainer, 64, context)
         }
-
-        updateSettingsControls()
     }
 
     private fun clearCheckBoxes() {
@@ -97,15 +93,32 @@ class HomeFragment : Fragment() {
         }
 
         homeViewModel.removedEntry.observe(viewLifecycleOwner, Observer { entry ->
-            binding.lineChart.data?.dataSets?.forEach{ ds->
+            binding.lineChart.data?.dataSets?.forEach { ds ->
                 Log.i("removedEntry.observe", "${ds.label}: xAxisValue: ${entry.dateTime}")
-                ds.removeEntryByXValue(entry.dateTime.toEpoch()) }
+                ds.removeEntryByXValue(entry.dateTime.toEpoch())
+            }
             invalidateChart()
+        })
+
+        homeViewModel.isStarted.observe(viewLifecycleOwner, Observer { isStarted ->
+            Log.i("homeViewModel.isStarted.observe", "isStarted: $isStarted")
+            binding.settings.visibility =
+                if (isLandscape() && isStarted) View.GONE else View.VISIBLE
+            if (isStarted) {
+                binding.applyButton.text = getString(R.string.stop)
+                binding.portTextField.isEnabled = false
+                binding.limitTextField.isEnabled = false
+            } else {
+                binding.applyButton.text = getString(R.string.start)
+                binding.portTextField.isEnabled = true
+                binding.limitTextField.isEnabled = true
+                binding.lineChart.data = null
+            }
         })
     }
 
     private fun plotCsvChart(dataSets: Map<String, List<CsvDataValue>>?, ignoreZeros: Boolean) {
-        try{
+        try {
             val chart = binding.lineChart
             chart.data?.clearValues()
             chart.data = null
@@ -114,6 +127,7 @@ class HomeFragment : Fragment() {
             val showCycles = visibleCount == 1
             dataSets?.toList()?.forEachIndexed { idxForColor, (name, data) ->
                 val csvData = csvDataMap.getOrPut(name) { CsvData() }
+                val isVisible = csvData.voltageVisible
 
                 csvData.clear()
                 data.toList().forEach { csvValue ->
@@ -122,26 +136,38 @@ class HomeFragment : Fragment() {
 
                 DetectCycles.analyzeSimple(csvData, ignoreZeros, showCycleTraces = false)
 
-                csvData.relayVisible = csvData.voltageVisible && showRelay
-                csvData.cyclesVisible = csvData.voltageVisible && showCycles
-                csvData.voltageColor = getColor(idxForColor)
+                val colorSchema = getColorSchema(idxForColor, isDarkTheme())
+
+                csvData.relayVisible = isVisible && showRelay
+                csvData.relayColor = colorSchema.relayColor
+                csvData.cyclesVisible = isVisible && showCycles
+                csvData.cyclesColor = colorSchema.cyclesColor
+
+                csvData.voltageColor = colorSchema.voltageColor
                 csvData.voltageLabel = name
 
-                if(LifeTimeChartBuilder().build(context, chart, csvData, ignoreZeros, isDarkTheme(),
-                    addSetsIfNotVisible = true)){
+                if (LifeTimeChartBuilder().build(
+                        context, chart, csvData, ignoreZeros, isDarkTheme(),
+                        addSetsIfNotVisible = true
+                    )
+                ) {
+                    chart.legend.isEnabled =
+                        IS_DEBUG_BUILD || csvData.relayVisible || csvData.cyclesVisible
                     addCheckbox(name, csvData.voltageVisible, csvData.voltageColor, csvData)
-                }else{
+                } else {
                     csvDataMap.remove(name)
                     removeCheckBox(name)
                 }
             }
-        }catch(e: Exception){
+        } catch (e: Exception) {
             Log.e("HomeFragment", "dataSets?.toList()?.forEachIndexed", e)
-            if (IS_DEBUG_BUILD) { throw e }
+            if (IS_DEBUG_BUILD) {
+                throw e
+            }
         }
     }
 
-    private fun invalidateChart(){
+    private fun invalidateChart() {
         Log.i("HomeFragment", "invalidateChart")
         binding.lineChart.data?.notifyDataChanged()
         binding.lineChart.notifyDataSetChanged()
@@ -167,25 +193,9 @@ class HomeFragment : Fragment() {
         updateControls()
     }
 
-    private fun updateSettingsControls() {
-        if (isStarted()) {
-            binding.applyButton.text = getString(R.string.stop)
-            binding.portTextField.isEnabled = false
-            binding.limitTextField.isEnabled = false
-        } else {
-            binding.applyButton.text = getString(R.string.start)
-            binding.portTextField.isEnabled = true
-            binding.limitTextField.isEnabled = true
-        }
-    }
-
-    private fun isStarted(): Boolean{
-        return UdpListener.isListening
-    }
-
     private fun addCheckbox(text: String, isChecked: Boolean, color: Int, csvData: CsvData) {
         var checkBox = binding.checkBoxContainer.findViewById<CheckBox>(getCheckBoxId(text))
-        if(checkBox == null) {
+        if (checkBox == null) {
             checkBox = CheckBox(context).apply {
                 id = getCheckBoxId(text)
                 this.text = text
@@ -206,7 +216,7 @@ class HomeFragment : Fragment() {
     private fun getCheckBoxId(text: String): Int = getCheckBoxIdStr(text).hashCode()
     private fun getCheckBoxIdStr(text: String): String = "$CHECK_BOX_ID$text"
 
-    private  fun removeCheckBox(text: String){
+    private fun removeCheckBox(text: String) {
         binding.checkBoxContainer.findViewById<CheckBox>(getCheckBoxId(text))?.let {
             binding.checkBoxContainer.removeView(it)
         }

@@ -3,7 +3,6 @@ package com.example.chargercharts2.utils
 import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Color
-import android.util.Log
 import com.github.mikephil.charting.components.MarkerView
 import com.github.mikephil.charting.data.*
 import com.github.mikephil.charting.data.Entry
@@ -18,20 +17,36 @@ import com.github.mikephil.charting.charts.LineChart
 import com.github.mikephil.charting.interfaces.datasets.ILineDataSet
 import com.github.mikephil.charting.utils.MPPointF
 
+data class ColorSchema(
+    val voltageColor: Int,
+    val relayColor: Int,
+    val cyclesColor: Int,)
 
-val predefinedColors = listOf(
-    Color.RED,
-    Color.BLUE,
-    Color.GREEN,
-    Color.MAGENTA,
-    Color.CYAN,
-    Color.YELLOW,
-    Color.DKGRAY,
-    Color.LTGRAY
+val UDPSenderColorSchemasDark = listOf<ColorSchema>(
+    ColorSchema(Color.RED, Color.GRAY, Color.WHITE),
+    ColorSchema(Color.BLUE, Color.GRAY, Color.WHITE),
+    ColorSchema(Color.GREEN,Color.GRAY, Color.WHITE),
+    ColorSchema(Color.MAGENTA,Color.GRAY, Color.WHITE),
+    ColorSchema(Color.CYAN,Color.GRAY, Color.WHITE),
+    ColorSchema(Color.YELLOW,Color.GRAY, Color.WHITE),
+    ColorSchema(Color.DKGRAY,Color.GRAY, Color.WHITE),
+    ColorSchema(Color.LTGRAY, Color.GRAY, Color.WHITE),
+)
+val UDPSenderColorSchemasWhite = listOf<ColorSchema>(
+    ColorSchema(Color.RED, Color.GRAY, Color.BLACK),
+    ColorSchema(Color.BLUE, Color.GRAY, Color.BLACK),
+    ColorSchema(Color.GREEN,Color.GRAY, Color.BLACK),
+    ColorSchema(Color.MAGENTA,Color.GRAY, Color.BLACK),
+    ColorSchema(Color.CYAN,Color.GRAY, Color.BLACK),
+    ColorSchema(Color.YELLOW,Color.GRAY, Color.BLACK),
+    ColorSchema(Color.DKGRAY,Color.GRAY, Color.BLACK),
+    ColorSchema(Color.LTGRAY, Color.GRAY, Color.BLACK),
 )
 
-fun getColor(setNumber: Int): Int{
-    return predefinedColors[setNumber % predefinedColors.size]
+fun getColorSchema(setNumber: Int, isDarkTheme: Boolean): ColorSchema{
+    return if(isDarkTheme)
+        UDPSenderColorSchemasDark[setNumber % UDPSenderColorSchemasDark.size]
+    else UDPSenderColorSchemasWhite[setNumber % UDPSenderColorSchemasWhite.size]
 }
 
 // Custom marker view class
