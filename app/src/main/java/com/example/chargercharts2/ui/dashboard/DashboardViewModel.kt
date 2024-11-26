@@ -23,14 +23,21 @@ class DashboardViewModel : ViewModel() {
         _csvChartData.postValue(csvData)
         _fileName.postValue(getFileNameFromUri(context, fileUri) ?: "File Name")
 
-        return !csvData.values.isEmpty()
+        val isFilled = !csvData.values.isEmpty()
+        _isFilled.postValue(isFilled)
+        return isFilled
     }
 
     fun clear(){
         _csvChartData.postValue(CsvData())
+        _isFilled.postValue(false)
+        _fileName.postValue("")
     }
 
     fun isEmpty() : Boolean{
         return _csvChartData.value?.values?.isEmpty() != false
     }
+
+    private val _isFilled = MutableLiveData<Boolean>()
+    val isFilled: LiveData<Boolean> get() = _isFilled
 }
