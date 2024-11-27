@@ -16,15 +16,16 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import com.example.chargercharts2.BuildConfig.IS_DEBUG_BUILD
 import com.example.chargercharts2.chartbuilders.HistoryChartBuilder
 import com.example.chargercharts2.databinding.FragmentDashboardBinding // Adjust with actual binding class
 import com.example.chargercharts2.models.CsvData
+import com.example.chargercharts2.utils.UdpListener
 import com.example.chargercharts2.utils.getFileExtensionFromUri
 import com.example.chargercharts2.utils.hideHighlight
 import com.example.chargercharts2.utils.isDarkTheme
 import com.example.chargercharts2.utils.isLandscape
 import com.example.chargercharts2.utils.updateViewMarginBottom
-import java.io.File
 
 class DashboardFragment : Fragment() {
 
@@ -53,6 +54,9 @@ class DashboardFragment : Fragment() {
 
         viewModel.csvChartData.observe(viewLifecycleOwner) { csvData ->
             updateControls(plotCsvChart(csvData, isIgnoreZeros))
+            if(IS_DEBUG_BUILD && csvData != null && !csvData.values.isEmpty()){
+                UdpListener.mockRealData("Real", csvData)
+            }
         }
 
         viewModel.fileName.observe(viewLifecycleOwner){ fileName ->

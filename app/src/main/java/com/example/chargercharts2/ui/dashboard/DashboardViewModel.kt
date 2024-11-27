@@ -5,8 +5,10 @@ import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.example.chargercharts2.BuildConfig.IS_DEBUG_BUILD
 import com.example.chargercharts2.analytics.DetectCycles
 import com.example.chargercharts2.models.CsvData
+import com.example.chargercharts2.utils.UdpListener
 import com.example.chargercharts2.utils.getFileNameFromUri
 
 class DashboardViewModel : ViewModel() {
@@ -19,7 +21,7 @@ class DashboardViewModel : ViewModel() {
 
     fun parseCsvFile(context: Context, fileUri: Uri) : Boolean {
         val csvData = CsvData.parseCsvFile(context, fileUri)
-        DetectCycles.analyzeSimple(csvData, ignoreZeros = true)
+        DetectCycles.analyzeSimple(csvData, windowSize = 5, ignoreZeros = true)
         _csvChartData.postValue(csvData)
         _fileName.postValue(getFileNameFromUri(context, fileUri) ?: "File Name")
 
