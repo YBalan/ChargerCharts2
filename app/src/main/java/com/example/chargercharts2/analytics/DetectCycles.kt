@@ -131,9 +131,10 @@ object DetectCycles {
         for ((index, csvDataValue) in filteredValues.withIndex()) {
             csvDataValue.setCycle(currentCycle, csvData)
 
-            csvDataValue.relayDuration = prevRelayDuration
-
             if(fillRelayDuration){
+                prevRelayDuration.end = csvDataValue.dateTime
+                csvDataValue.relayDuration = prevRelayDuration
+
                 if(csvDataValue.relay != lastRelayValue){
                     prevRelayDuration.end = csvDataValue.dateTime
                     prevRelayDuration = DateTimeRange(csvDataValue.dateTime)
