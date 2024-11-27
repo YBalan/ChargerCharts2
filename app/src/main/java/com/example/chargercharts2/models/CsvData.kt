@@ -21,11 +21,17 @@ enum class CycleType
     Floating,
 }
 
+data class DateTimeRange(var start: LocalDateTime, var end: LocalDateTime? = null){
+    val duration: Duration
+        get() = Duration.between(start, end ?: start)
+}
+
 data class CsvDataValue(
     val dateTime: LocalDateTime,
     val voltage: Float,
     val relay: Float,
-    var cycle: Cycle? = null
+    var cycle: Cycle? = null,
+    var relayDuration: DateTimeRange? = null
 ){
     fun setCycle(cycle: Cycle?, csvData: CsvData){
         this.cycle = cycle
@@ -38,10 +44,31 @@ data class CsvDataValue(
             val dtFormatter = DateTimeFormatter.ofPattern(CsvData.DATE_TIME_TOOLTIP_FORMAT)
             return (data as? CsvDataValue)?.let {
                 (if(dataSetName.isNullOrEmpty()) "" else dataSetName + "\n") +
-                "Date: ${dtFormatter.format(it.dateTime)}\nVoltage: ${it.voltage}\nRelay: ${if(it.relay == 0f) "Off" else "On"}" +
+                "Date: ${dtFormatter.format(it.dateTime)}"+
+                "\nVoltage: ${it.voltage}"+
+                "\nRelay: ${if(it.relay == 0f) "Off" else "On"}" +
+                (if(it.relayDuration != null) " (${it.relayDuration?.duration.toString(false, true)})" else "")+
                 (if(it.cycle != null) "\nCycle: ${it.cycle?.type}" else "") +
-                (if(it.cycle?.duration != null) "\nDuration: ${it.cycle?.duration}" else "")
+                (if(it.cycle?.duration != null) "\nDuration: ${it.cycle?.duration.toString(false, false)}" else "")
             }
+        }
+
+        fun Duration?.toString(showSeconds: Boolean, showDays: Boolean): String {
+            if (this == null || this == Duration.ZERO) return "N/A"
+
+            val days = this.toDays()
+            val hours = if(showDays) this.toHours() % 24 else this.toHours()
+            val minutes = this.toMinutes() % 60
+            val seconds = this.seconds % 60
+
+            return buildString {
+                if (showDays && days > 0) append("$days day${if (days > 1) "s" else ""} ")
+                append("%02d:".format(hours))
+                append("%02d".format(minutes))
+                if (showSeconds || minutes == 0L) {
+                    append(":%02ds".format(seconds))
+                }
+            }.trim()
         }
     }
 }
