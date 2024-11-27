@@ -6,6 +6,7 @@ import com.example.chargercharts2.models.CsvData
 import com.example.chargercharts2.models.CsvDataValue
 import com.example.chargercharts2.models.Cycle
 import com.example.chargercharts2.models.CycleType
+import com.example.chargercharts2.models.DateTimeRange
 import java.time.LocalDateTime
 import kotlin.math.abs
 
@@ -100,7 +101,8 @@ object DetectCycles {
     fun analyzeSimple(csvData: CsvData, ignoreZeros: Boolean,
                       windowSize: Int = 7, threshold: Float = 0.11f,
                       showCycleTraces: Boolean = true,
-                      useMedian: Boolean = true){
+                      useMedian: Boolean = true,
+                      fillRelayDuration: Boolean = true){
 
         if (csvData.values.size < windowSize) return
 
@@ -117,6 +119,9 @@ object DetectCycles {
 
         val movingData =  fillMovingData(filteredValues, windowSize, useMedian)
         var lastMovingValue = movingData.firstOrNull() ?: firstValue.voltage
+        var lastRelayValue = firstValue.relay
+        var lastRelayChanged = firstValue.dateTime
+        var prevRelayDuration = DateTimeRange(lastRelayChanged)
 
         //val firstWindow = filteredValues.slice(0 until 0 + windowSize)
         //val firstChange = firstWindow.first().voltage - firstWindow.last().voltage
@@ -125,6 +130,18 @@ object DetectCycles {
         var currentCycle = Cycle(firstValue.dateTime, type = CycleType.Floating)
         for ((index, csvDataValue) in filteredValues.withIndex()) {
             csvDataValue.setCycle(currentCycle, csvData)
+
+            csvDataValue.relayDuration = prevRelayDuration
+
+            if(fillRelayDuration){
+                if(csvDataValue.relay != lastRelayValue){
+                    prevRelayDuration.end = csvDataValue.dateTime
+                    prevRelayDuration = DateTimeRange(csvDataValue.dateTime)
+                    csvDataValue.relayDuration = prevRelayDuration
+                    lastRelayValue = csvDataValue.relay
+                    lastRelayChanged = csvDataValue.dateTime
+                }
+            }
 
             //if (index < windowSize - 1) continue
             //val movingValue = movingData[index - windowSize + 1]
@@ -152,7 +169,9 @@ object DetectCycles {
             lastMovingValue = movingValue
         }
 
-        currentCycle.end = filteredValues.lastOrNull()?.dateTime
+        val lastDateTime = filteredValues.lastOrNull()?.dateTime
+        prevRelayDuration.end = lastDateTime
+        currentCycle.end = lastDateTime
         if(!cycles.contains(currentCycle))
             cycles.add(currentCycle)
 

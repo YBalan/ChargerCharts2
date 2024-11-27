@@ -23,20 +23,20 @@ data class ColorSchema(
     val cyclesColor: Int,)
 
 val UDPSenderColorSchemasDark = listOf<ColorSchema>(
-    ColorSchema(Color.RED, Color.GRAY, Color.WHITE),
-    ColorSchema(Color.BLUE, Color.GRAY, Color.WHITE),
-    ColorSchema(Color.GREEN,Color.GRAY, Color.WHITE),
-    ColorSchema(Color.MAGENTA,Color.GRAY, Color.WHITE),
-    ColorSchema(Color.CYAN,Color.GRAY, Color.WHITE),
-    ColorSchema(Color.YELLOW,Color.GRAY, Color.WHITE),
-    ColorSchema(Color.DKGRAY,Color.GRAY, Color.WHITE),
-    ColorSchema(Color.LTGRAY, Color.GRAY, Color.WHITE),
-)
-val UDPSenderColorSchemasWhite = listOf<ColorSchema>(
-    ColorSchema(Color.RED, Color.GRAY, Color.RED),
     ColorSchema(Color.BLUE, Color.GRAY, Color.RED),
     ColorSchema(Color.GREEN,Color.GRAY, Color.RED),
     ColorSchema(Color.MAGENTA,Color.GRAY, Color.RED),
+    ColorSchema(Color.RED, Color.GRAY, Color.RED),
+    ColorSchema(Color.CYAN,Color.GRAY, Color.RED),
+    ColorSchema(Color.YELLOW,Color.GRAY, Color.RED),
+    ColorSchema(Color.DKGRAY,Color.GRAY, Color.RED),
+    ColorSchema(Color.LTGRAY, Color.GRAY, Color.RED),
+)
+val UDPSenderColorSchemasWhite = listOf<ColorSchema>(
+    ColorSchema(Color.BLUE, Color.GRAY, Color.RED),
+    ColorSchema(Color.GREEN,Color.GRAY, Color.RED),
+    ColorSchema(Color.MAGENTA,Color.GRAY, Color.RED),
+    ColorSchema(Color.RED, Color.GRAY, Color.RED),
     ColorSchema(Color.CYAN,Color.GRAY, Color.RED),
     ColorSchema(Color.YELLOW,Color.GRAY, Color.RED),
     ColorSchema(Color.DKGRAY,Color.GRAY, Color.RED),

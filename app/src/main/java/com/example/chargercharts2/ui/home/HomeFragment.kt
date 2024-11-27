@@ -93,6 +93,7 @@ class HomeFragment : Fragment() {
         }
 
         homeViewModel.removedEntry.observe(viewLifecycleOwner, Observer { entry ->
+            binding.lineChart.hideHighlight()
             binding.lineChart.data?.dataSets?.forEach { ds ->
                 Log.i("removedEntry.observe", "${ds.label}: xAxisValue: ${entry.dateTime}")
                 ds.removeEntryByXValue(entry.dateTime.toEpoch())

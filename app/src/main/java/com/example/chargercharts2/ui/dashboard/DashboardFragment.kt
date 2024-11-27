@@ -60,6 +60,7 @@ class DashboardFragment : Fragment() {
         }
 
         binding.ignoreZeroCheckBox.setOnCheckedChangeListener { _, isChecked ->
+            binding.lineChart.hideHighlight()
             plotCsvChart(viewModel.csvChartData.value, !isChecked)
             binding.lineChart.invalidate()
         }
@@ -128,16 +129,19 @@ class DashboardFragment : Fragment() {
 
             // Set up CheckBox listeners to toggle chart visibility
             binding.voltageCheckBox.setOnCheckedChangeListener { _, isChecked ->
+                binding.lineChart.hideHighlight()
                 toggleChartDataSetVisibility(csvData.voltageLabel, isChecked)
                 csvData.voltageVisible = isChecked
             }
 
             binding.relayCheckBox.setOnCheckedChangeListener { _, isChecked ->
+                binding.lineChart.hideHighlight()
                 toggleChartDataSetVisibility(csvData.relayLabel, isChecked)
                 csvData.relayVisible = isChecked
             }
 
             binding.cyclesCheckBox.setOnCheckedChangeListener{_, isChecked ->
+                binding.lineChart.hideHighlight()
                 Log.i("binding.cyclesCheckBox.setOnCheckedChangeListener","label: ${csvData.cyclesLabel}; IsChecked: $isChecked")
                 toggleChartDataSetVisibility(csvData.cyclesLabel, isChecked)
                 csvData.cyclesVisible = isChecked

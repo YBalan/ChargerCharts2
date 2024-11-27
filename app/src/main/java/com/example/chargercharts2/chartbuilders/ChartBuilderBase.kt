@@ -107,6 +107,10 @@ open class ChartBuilderBase {
 
             chart.xAxis.textColor = Color.WHITE
             chart.legend.textColor = Color.WHITE
+
+            chart.data.dataSets.forEach { ds ->
+                ds.valueTextColor = Color.WHITE
+            }
         }
 
         chart.isAutoScaleMinMaxEnabled = true
