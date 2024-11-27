@@ -119,6 +119,7 @@ object DetectCycles {
 
         val movingData =  fillMovingData(filteredValues, windowSize, useMedian)
         var lastMovingValue = movingData.firstOrNull() ?: firstValue.voltage
+        var lastVoltageValue = firstValue.voltage
         var lastRelayValue = firstValue.relay
         var lastRelayChanged = firstValue.dateTime
         var prevRelayDuration = DateTimeRange(lastRelayChanged)
@@ -150,6 +151,8 @@ object DetectCycles {
 
             val change = movingValue - lastMovingValue
 
+            val currentVoltageValue = csvDataValue.voltage
+
             val currentCycleType = when {
                 change > threshold -> CycleType.Charging
                 change < -threshold -> CycleType.Discharging
@@ -168,6 +171,7 @@ object DetectCycles {
             }
 
             lastMovingValue = movingValue
+            lastVoltageValue = csvDataValue.voltage
         }
 
         val lastDateTime = filteredValues.lastOrNull()?.dateTime

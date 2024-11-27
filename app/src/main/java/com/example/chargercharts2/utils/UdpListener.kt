@@ -13,6 +13,8 @@ import java.time.format.DateTimeFormatter
 import java.time.format.ResolverStyle
 import com.example.chargercharts2.models.*
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.runBlocking
 import java.time.LocalDateTime
 import java.time.format.DateTimeParseException
 import java.util.Timer
@@ -195,6 +197,41 @@ object UdpListener {
         timer = null
     }
 
+    fun mockRealData(name: String, csvData: CsvData, interval: Long = 500) {
+        closeTimer()
+        val serverAddress = "127.0.0.1"
+
+        val address = InetAddress.getByName(serverAddress)
+        val dateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+
+        CoroutineScope(Dispatchers.Default).launch  {
+            val socket1 = DatagramSocket()
+            try {
+                csvData.values.forEach { csvDataValue ->
+                    // Create a message to send
+                    val dateTime = dateTimeFormatter.format(csvDataValue.dateTime)
+                    val str = "$name,${dateTime},${csvDataValue.voltage},${csvDataValue.relay}"
+                    val message1 = str.toByteArray()
+
+                    //Log.i("UdpSender.mockRealData", "$str")
+
+                    // Create a DatagramPacket to send the message
+                    val packet1 = DatagramPacket(message1, message1.size, address, _port)
+
+                    // Send the packet
+                    socket1.send(packet1)
+
+                    delay(interval)
+                }
+
+            } catch (e: Exception) {
+                Log.e("UdpSender.mockRealData", "Error sending UDP packet", e)
+            } finally {
+                socket1.close()
+            }
+        }
+    }
+
     private fun mockUDPDataSenders()
     {
         // Schedule a task to run every minute (60000 milliseconds)
@@ -245,7 +282,7 @@ object UdpListener {
                 socket2.send(packet4)
 
             }catch (e: Exception){
-                Log.e("UdpSender", "Error sending UDP packet", e)
+                Log.e("UdpSender.mockUDPDataSenders", "Error sending UDP packet", e)
             }
             finally {
                 socket1.close()
