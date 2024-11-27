@@ -45,7 +45,7 @@ open class ChartBuilderBase {
                 relay.add(relayEntry)
 
                 csvDataValue.cycle?.let { cycle ->
-                    cycle.value?.let { value ->
+                    cycle.value?.let { _ ->
                         val cycleEntry = Entry(dt, csvData.getValueForCycle(cycle.type) ?: 0f)
                         cycleEntry.data = csvDataValue
                         cycles.add(cycleEntry)
@@ -63,7 +63,7 @@ open class ChartBuilderBase {
                 setCircleColor(csvData.voltageColor)
                 highLightColor = csvData.voltageColor
                 //highlightLineWidth = 3f
-                valueFormatter = CustomYRightValueFormatter(csvData)
+                valueFormatter = CustomYRightValueFormatter(csvData, shortValue = false)
             }
             lineData.addDataSet(dataSetVoltage)
         }
@@ -75,7 +75,7 @@ open class ChartBuilderBase {
                 setCircleColor(csvData.relayColor)
                 highLightColor = csvData.relayColor
                 //highlightLineWidth = 3f
-                valueFormatter = CustomYRightValueFormatter(csvData)
+                valueFormatter = CustomYRightValueFormatter(csvData, shortValue = false)
             }
             lineData.addDataSet(dataSetRelay)
         }
@@ -87,7 +87,7 @@ open class ChartBuilderBase {
                 setCircleColor(csvData.cyclesColor)
                 highLightColor = csvData.cyclesColor
                 //highlightLineWidth = 3f
-                valueFormatter = CustomYRightValueFormatter(csvData)
+                valueFormatter = CustomYRightValueFormatter(csvData, shortValue = true)
             }
             lineData.addDataSet(dataSetCycles)
         }
@@ -116,7 +116,7 @@ open class ChartBuilderBase {
         chart.isAutoScaleMinMaxEnabled = true
 
         chart.xAxis.valueFormatter = CustomXValueFormatter(xAxisFormat)
-        chart.axisRight.valueFormatter = CustomYRightValueFormatter(csvData)
+        chart.axisRight.valueFormatter = CustomYRightValueFormatter(csvData, shortValue = false)
 
         val markerView = CustomMarkerView(context, R.layout.custom_marker_view, chart.data, toolTipFormat, highlightFormatter)
         chart.marker = markerView

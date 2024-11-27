@@ -112,12 +112,12 @@ data class CsvData(
         cycles.clear()
     }
 
-    fun getYRightValue(value: Float) : String? {
+    fun getYRightValue(value: Float, shortValue: Boolean) : String? {
         return when (value) {
             getValueForRelayOff(value) -> "Off"
             getValueForRelayOn(value) -> "On"
-            getValueForCycleDischarging() -> CycleType.Discharging.toString()
-            getValueForCycleCharging() -> CycleType.Charging.toString()
+            getValueForCycleDischarging() -> if(shortValue) "-" else CycleType.Discharging.toString()
+            getValueForCycleCharging() -> if(shortValue) "+" else CycleType.Charging.toString()
             else -> null
         }
     }

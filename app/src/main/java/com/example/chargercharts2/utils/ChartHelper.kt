@@ -104,15 +104,13 @@ class CustomXValueFormatter(dateTimeFormat: String)
     }
 }
 
-class CustomYRightValueFormatter(val csvData: CsvData?)
+class CustomYRightValueFormatter(val csvData: CsvData?, val shortValue: Boolean)
     : ValueFormatter() {
 
     override fun getFormattedValue(value: Float): String {
-        return csvData?.getYRightValue(value) ?: "%.2f".format(value)
+        return csvData?.getYRightValue(value, shortValue) ?: "%.2f".format(value)
     }
 }
-
-
 
 fun LineData?.isSetExistsByLabel(label: String, ignoreCase: Boolean = true) : Boolean{
     this ?: return false // Return false if LineData is null
