@@ -135,7 +135,7 @@ class HomeFragment : Fragment() {
                     csvData.addValue(csvValue)
                 }
 
-                DetectCycles.analyzeSimple(csvData, ignoreZeros, windowSize = 5, showCycleTraces = false)
+                DetectCycles.analyzeSimple(csvData, ignoreZeros, windowSize = 3, showCycleTraces = false)
 
                 val colorSchema = getColorSchema(idxForColor, isDarkTheme())
 

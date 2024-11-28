@@ -21,7 +21,7 @@ class DashboardViewModel : ViewModel() {
 
     fun parseCsvFile(context: Context, fileUri: Uri) : Boolean {
         val csvData = CsvData.parseCsvFile(context, fileUri)
-        DetectCycles.analyzeSimple(csvData, windowSize = 5, ignoreZeros = true)
+        DetectCycles.analyzeSimple(csvData, windowSize = 3, ignoreZeros = true)
         _csvChartData.postValue(csvData)
         _fileName.postValue(getFileNameFromUri(context, fileUri) ?: "File Name")
 
