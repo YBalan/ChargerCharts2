@@ -5,11 +5,10 @@ import android.net.Uri
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.chargercharts2.BuildConfig.IS_DEBUG_BUILD
 import com.example.chargercharts2.analytics.DetectCycles
 import com.example.chargercharts2.models.CsvData
-import com.example.chargercharts2.utils.UdpListener
 import com.example.chargercharts2.utils.getFileNameFromUri
+import kotlinx.coroutines.*
 
 class DashboardViewModel : ViewModel() {
 
@@ -19,15 +18,59 @@ class DashboardViewModel : ViewModel() {
     private val _fileName = MutableLiveData<String>()
     val fileName: LiveData<String> get() = _fileName
 
-    fun parseCsvFile(context: Context, fileUri: Uri) : Boolean {
-        val csvData = CsvData.parseCsvFile(context, fileUri)
-        DetectCycles.analyzeSimple(csvData, windowSize = 3, ignoreZeros = true)
-        _csvChartData.postValue(csvData)
-        _fileName.postValue(getFileNameFromUri(context, fileUri) ?: "File Name")
+    private var timeLapsJob: Job? = null
 
+    val timeLapsIntervalDefault = 500L
+    val timeLapsIntervalMax = 3000L
+    val timeLapsIntervalMin = 50L
+    val timeLapsIntervalStep = 50L
+    var timeLapsInterval: Long = timeLapsIntervalDefault
+
+    fun onVolumeUpPressed() {
+        timeLapsInterval -= timeLapsIntervalStep
+        if(timeLapsInterval < timeLapsIntervalMin) timeLapsInterval = timeLapsIntervalMin
+    }
+
+    fun onVolumeDownPressed() {
+        timeLapsInterval += timeLapsIntervalStep
+        if(timeLapsInterval > timeLapsIntervalMax) timeLapsInterval = timeLapsIntervalMax
+    }
+
+    fun parseCsvFile(context: Context, fileUri: Uri, showTimeLaps: Boolean) : Boolean {
+        val csvData = CsvData.parseCsvFile(context, fileUri)
         val isFilled = !csvData.values.isEmpty()
+        if(isFilled){
+            val fileName = getFileNameFromUri(context, fileUri) ?: "File Name"
+            if(showTimeLaps){
+                _fileName.postValue("(${timeLapsInterval}ms.) $fileName")
+                DetectCycles.analyzeSimple(csvData, windowSize = 3, ignoreZeros = true)
+                startTimeLaps(csvData, fileName)
+            }else {
+                _fileName.postValue(fileName)
+                DetectCycles.analyzeSimple(csvData, windowSize = 3, ignoreZeros = true)
+                _csvChartData.postValue(csvData)
+            }
+        }
         _isFilled.postValue(isFilled)
         return isFilled
+    }
+
+    fun startTimeLaps(csvData: CsvData, fileName: String){
+        val newCsvData = CsvData(cyclesVisible = true)
+        timeLapsJob = CoroutineScope(Dispatchers.Main).launch {
+            csvData.values.forEach{ csvDataValue ->
+                newCsvData.addValue(csvDataValue)
+                _csvChartData.postValue(newCsvData)
+                _fileName.postValue("(${timeLapsInterval}ms.) $fileName")
+                delay(timeLapsInterval)
+            }
+        }
+    }
+
+    fun stopTimeLaps(){
+        timeLapsJob?.cancel()
+        timeLapsJob = null
+        _isFilled.postValue(false)
     }
 
     fun clear(){

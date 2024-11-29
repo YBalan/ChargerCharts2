@@ -67,7 +67,7 @@
             android:layout_height="wrap_content"
             android:text="Cycles"
             android:layout_marginStart="8dp"
-            android:checked="false" />
+            android:checked="true" />
 		<!-- CheckBox for ignoreZeros data set -->
         <CheckBox
             android:id="@+id/ignoreZeroCheckBox"

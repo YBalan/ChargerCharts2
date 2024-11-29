@@ -2,11 +2,10 @@ package com.example.chargercharts2.chartbuilders
 
 import android.content.Context
 import android.graphics.Color
+import android.util.Log
 import com.example.chargercharts2.BuildConfig.IS_DEBUG_BUILD
 import com.example.chargercharts2.R
 import com.example.chargercharts2.models.CsvData
-import com.example.chargercharts2.models.CsvDataValue
-import com.example.chargercharts2.models.CycleType
 import com.example.chargercharts2.utils.CustomMarkerView
 import com.example.chargercharts2.utils.CustomXValueFormatter
 import com.example.chargercharts2.utils.CustomYRightValueFormatter

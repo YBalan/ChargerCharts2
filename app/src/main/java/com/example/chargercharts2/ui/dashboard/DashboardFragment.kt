@@ -16,11 +16,9 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
-import com.example.chargercharts2.BuildConfig.IS_DEBUG_BUILD
 import com.example.chargercharts2.chartbuilders.HistoryChartBuilder
 import com.example.chargercharts2.databinding.FragmentDashboardBinding // Adjust with actual binding class
 import com.example.chargercharts2.models.CsvData
-import com.example.chargercharts2.utils.UdpListener
 import com.example.chargercharts2.utils.getFileExtensionFromUri
 import com.example.chargercharts2.utils.hideHighlight
 import com.example.chargercharts2.utils.isDarkTheme
@@ -33,6 +31,7 @@ class DashboardFragment : Fragment() {
     private val binding get() = _binding!!
     private val viewModel: DashboardViewModel by activityViewModels()
     val isIgnoreZeros: Boolean get() = !binding.ignoreZeroCheckBox.isChecked
+    private var _isLongPressed = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -49,14 +48,18 @@ class DashboardFragment : Fragment() {
 
         setupBackButton()
         binding.pickFileButton.setOnClickListener {
+            _isLongPressed = false
             openFilePicker()
+        }
+
+        binding.pickFileButton.setOnLongClickListener {
+            openFilePicker()
+            _isLongPressed = true
+            true
         }
 
         viewModel.csvChartData.observe(viewLifecycleOwner) { csvData ->
             updateControls(plotCsvChart(csvData, isIgnoreZeros))
-            if(IS_DEBUG_BUILD && csvData != null && !csvData.values.isEmpty()){
-                UdpListener.mockRealData("Real", csvData)
-            }
         }
 
         viewModel.fileName.observe(viewLifecycleOwner){ fileName ->
@@ -88,7 +91,9 @@ class DashboardFragment : Fragment() {
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 // Define your back button behavior
+                _isLongPressed = false
                 viewModel.clear()
+                viewModel.stopTimeLaps()
                 updateControls(isChartView = false)
             }
         })
@@ -104,13 +109,14 @@ class DashboardFragment : Fragment() {
                         Toast.makeText(context, "Selected file is not *.csv", Toast.LENGTH_SHORT).show()
                         return@let
                     }
-                    if (!viewModel.parseCsvFile(requireContext(), uri)) {
+                    if (!viewModel.parseCsvFile(requireContext(), uri, _isLongPressed)) {
                         binding.lineChart.data = null
                         binding.lineChart.invalidate()
                         Toast.makeText(context, "No data available", Toast.LENGTH_SHORT).show()
                     }
                 } ?: Toast.makeText(context, "File selection error", Toast.LENGTH_SHORT).show()
             }
+            _isLongPressed = false
         }
 
     private fun plotCsvChart(csvData: CsvData?, ignoreZeros: Boolean) : Boolean {

@@ -14,7 +14,6 @@ import java.time.format.ResolverStyle
 import com.example.chargercharts2.models.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import java.time.LocalDateTime
 import java.time.format.DateTimeParseException
 import java.util.Timer
