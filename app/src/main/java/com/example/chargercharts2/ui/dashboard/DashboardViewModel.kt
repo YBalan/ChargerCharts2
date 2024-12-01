@@ -55,13 +55,29 @@ class DashboardViewModel : ViewModel() {
         return isFilled
     }
 
-    fun startTimeLaps(csvData: CsvData, fileName: String){
+    fun startTimeLaps1(csvData: CsvData, fileName: String){
         val newCsvData = CsvData(cyclesVisible = true)
         timeLapsJob = CoroutineScope(Dispatchers.Main).launch {
             csvData.values.forEach{ csvDataValue ->
                 newCsvData.addValue(csvDataValue)
                 _csvChartData.postValue(newCsvData)
                 _fileName.postValue("(${timeLapsInterval}ms.) $fileName")
+                delay(timeLapsInterval)
+            }
+        }
+    }
+
+    fun startTimeLaps(csvData: CsvData, fileName: String){
+        timeLapsJob = CoroutineScope(Dispatchers.Main).launch {
+            csvData.cyclesVisible = true
+            for (i in 0 until csvData.values.size){
+                //val values = csvData.values.slice(0 until i + 1 ).toMutableList()
+                //val values = csvData.values.take(i + 1).toMutableList()
+                //var newCsvData: CsvData? = CsvData(csvData.maxV, csvData.minV, values, cyclesVisible = true)
+                csvData.values[i].visible = true
+                _csvChartData.postValue(csvData)
+                _fileName.postValue("(${timeLapsInterval}ms.) $fileName")
+                //newCsvData = null
                 delay(timeLapsInterval)
             }
         }

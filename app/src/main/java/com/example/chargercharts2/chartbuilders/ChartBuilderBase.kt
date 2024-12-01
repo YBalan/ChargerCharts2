@@ -24,6 +24,7 @@ open class ChartBuilderBase {
         ignoreZeros: Boolean,
         isDarkTheme: Boolean,
         addSetsIfNotVisible: Boolean = true,
+        checkValueVisibility: Boolean = false,
     ): Boolean {
         if (csvData.values.isEmpty()) return false
 
@@ -33,21 +34,23 @@ open class ChartBuilderBase {
 
         csvData.values.forEach { csvDataValue ->
             if (!ignoreZeros || csvDataValue.voltage > 0f) {
-                val dt = csvDataValue.dateTime.toEpoch().toFloat()
+                if(!checkValueVisibility || csvDataValue.visible) {
+                    val dt = csvDataValue.dateTime.toEpoch().toFloat()
 
-                val voltageEntry = Entry(dt, csvDataValue.voltage)
-                voltageEntry.data = csvDataValue
-                voltage.add(voltageEntry)
+                    val voltageEntry = Entry(dt, csvDataValue.voltage)
+                    voltageEntry.data = csvDataValue
+                    voltage.add(voltageEntry)
 
-                val relayEntry = Entry(dt, csvData.getValueForRelay(csvDataValue.relay))
-                relayEntry.data = csvDataValue
-                relay.add(relayEntry)
+                    val relayEntry = Entry(dt, csvData.getValueForRelay(csvDataValue.relay))
+                    relayEntry.data = csvDataValue
+                    relay.add(relayEntry)
 
-                csvDataValue.cycle?.let { cycle ->
-                    cycle.value?.let { _ ->
-                        val cycleEntry = Entry(dt, csvData.getValueForCycle(cycle.type) ?: 0f)
-                        cycleEntry.data = csvDataValue
-                        cycles.add(cycleEntry)
+                    csvDataValue.cycle?.let { cycle ->
+                        cycle.value?.let { _ ->
+                            val cycleEntry = Entry(dt, csvData.getValueForCycle(cycle.type) ?: 0f)
+                            cycleEntry.data = csvDataValue
+                            cycles.add(cycleEntry)
+                        }
                     }
                 }
             }

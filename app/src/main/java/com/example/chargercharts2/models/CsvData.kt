@@ -31,7 +31,8 @@ data class CsvDataValue(
     val voltage: Float,
     val relay: Float,
     var cycle: Cycle? = null,
-    var relayDuration: DateTimeRange? = null
+    var relayDuration: DateTimeRange? = null,
+    var visible: Boolean = false
 ){
     fun setCycle(cycle: Cycle?, csvData: CsvData){
         this.cycle = cycle
