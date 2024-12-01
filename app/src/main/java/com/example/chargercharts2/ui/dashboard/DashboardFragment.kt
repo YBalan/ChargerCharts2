@@ -62,13 +62,20 @@ class DashboardFragment : Fragment() {
             updateControls(plotCsvChart(csvData, isIgnoreZeros))
         }
 
+        viewModel.addedEntry.observe(viewLifecycleOwner){ csvDataValue ->
+            HistoryChartBuilder().addValue(context, binding.lineChart,
+                viewModel.csvChartData.value ?: CsvData(), csvDataValue, ignoreZeros = true, checkValueVisibility = true)
+            binding.lineChart.invalidate()
+        }
+
         viewModel.fileName.observe(viewLifecycleOwner){ fileName ->
             binding.fileNameTextView.text = fileName
         }
 
         binding.ignoreZeroCheckBox.setOnCheckedChangeListener { _, isChecked ->
             binding.lineChart.hideHighlight()
-            plotCsvChart(viewModel.csvChartData.value, !isChecked)
+            if(!_isLongPressed){
+                plotCsvChart(viewModel.csvChartData.value, !isChecked)}
             binding.lineChart.invalidate()
         }
     }
