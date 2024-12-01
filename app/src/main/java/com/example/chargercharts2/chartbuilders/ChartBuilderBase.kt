@@ -133,7 +133,7 @@ open class ChartBuilderBase {
         csvData: CsvData,
         shortValue: Boolean
     ) {
-        var lineDataSet = chart.data.getDataSetByLabel(label, true)
+        var lineDataSet = chart.data?.getDataSetByLabel(label, true)
         if (lineDataSet != null) {
             lineDataSet.addEntry(entry)
         } else {
@@ -145,6 +145,7 @@ open class ChartBuilderBase {
                 //highlightLineWidth = 3f
                 valueFormatter = CustomYRightValueFormatter(csvData, shortValue)
             }
+            if(chart.data == null) chart.data = LineData()
             chart.data.addDataSet(lineDataSet)
         }
     }
