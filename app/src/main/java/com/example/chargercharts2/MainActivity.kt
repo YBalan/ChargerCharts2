@@ -3,6 +3,7 @@ package com.example.chargercharts2
 import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
+import android.view.KeyEvent
 import android.view.View
 import androidx.activity.viewModels
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -105,5 +106,19 @@ class MainActivity : AppCompatActivity() {
 
     private fun getCurrentNavigation(): Int? {
         return navController.currentDestination?.id
+    }
+
+    override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        when (keyCode) {
+            KeyEvent.KEYCODE_VOLUME_UP -> {
+                dashboardViewModel.onVolumeUpPressed()
+                return true
+            }
+            KeyEvent.KEYCODE_VOLUME_DOWN -> {
+                dashboardViewModel.onVolumeDownPressed()
+                return true
+            }
+        }
+        return super.onKeyDown(keyCode, event)
     }
 }

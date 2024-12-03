@@ -121,6 +121,19 @@ fun LineChart.hideHighlight(){
     this.highlightValue(null)
 }
 
+fun LineChart.moveToLast(): Entry?{
+    val data = this.data
+    if (data != null && data.entryCount > 0) {
+        val lastIndex = data.getDataSetByIndex(0).entryCount - 1
+        val lastEntry = data.getDataSetByIndex(0).getEntryForIndex(lastIndex)
+
+        this.moveViewToX(lastEntry.x)
+
+        return lastEntry
+    }
+    return null
+}
+
 fun LineChart.recalculateYAxis(margin: Float = 0.1f) {
     val allVisibleEntries = this.data.dataSets
         .filter { it.isVisible } // Include only visible data sets

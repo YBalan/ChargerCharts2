@@ -17,10 +17,12 @@ class HistoryChartBuilder : ChartBuilderBase() {
         csvData: CsvData,
         ignoreZeros: Boolean,
         isDarkTheme: Boolean,
-        addSetsIfNotVisible: Boolean
+        addSetsIfNotVisible: Boolean,
+        checkValueVisibility: Boolean
     ): Boolean {
         chart.data = LineData()
-        if (super.build(context, chart, csvData, ignoreZeros, isDarkTheme, addSetsIfNotVisible = true)) {
+        if (super.build(context, chart, csvData, ignoreZeros, isDarkTheme,
+                addSetsIfNotVisible = true, checkValueVisibility)) {
 
             val xAxis = chart.xAxis
             xAxis.position = XAxis.XAxisPosition.BOTTOM

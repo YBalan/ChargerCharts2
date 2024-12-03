@@ -1,5 +1,6 @@
 package com.example.chargercharts2.ui.home
 
+import android.R
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import com.example.chargercharts2.models.CsvData
@@ -10,9 +11,11 @@ class HomeViewModel : ViewModel() {
     val dataSets: LiveData<Map<String, List<CsvDataValue>>> = UdpListener.dataSets
     val removedEntry: LiveData<CsvDataValue> = UdpListener.removedEntry
 
-    //val addedEntry : LiveData<CsvDataValue> = UdpListener.addedEntry
+    val addedEntry : LiveData<CsvDataValue> = UdpListener.addedEntry
     val csvDataMap = mutableMapOf<String, CsvData>()
     val isStarted: LiveData<Boolean> = UdpListener.isListening
+
+    val lastDateTime: LiveData<String> = UdpListener.lastDateTime
 
     fun clear() {
         csvDataMap.clear()

@@ -31,12 +31,17 @@ data class CsvDataValue(
     val voltage: Float,
     val relay: Float,
     var cycle: Cycle? = null,
-    var relayDuration: DateTimeRange? = null
+    var relayDuration: DateTimeRange? = null,
+    var visible: Boolean = false
 ){
     fun setCycle(cycle: Cycle?, csvData: CsvData){
         this.cycle = cycle
         if(cycle != null)
             this.cycle?.value = csvData.getValueForCycle(cycle.type)
+    }
+
+    override fun toString() : String{
+        return "${DateTimeFormatter.ofPattern(CsvData.DATE_TIME_CSV_VALUE_FORMAT).format(dateTime)} [${"%.1f".format(voltage)}V]"
     }
 
     companion object {
@@ -159,6 +164,7 @@ data class CsvData(
     companion object {
         const val DATE_TIME_CSV_CHART_FORMAT: String = "MM-dd-yy HH:mm"
         const val DATE_TIME_UDP_CHART_FORMAT: String = "HH:mm"
+        const val DATE_TIME_CSV_VALUE_FORMAT: String = "HH:mm:ss"
         const val DATE_TIME_CSV_FORMAT: String = "uuuu-MM-dd HH:mm:ss"
         const val DATE_TIME_TOOLTIP_FORMAT: String = "HH:mm:ss MM-dd-yy"
 

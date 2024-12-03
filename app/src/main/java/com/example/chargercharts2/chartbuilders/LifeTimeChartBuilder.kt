@@ -12,9 +12,11 @@ class LifeTimeChartBuilder : ChartBuilderBase() {
         csvData: CsvData,
         ignoreZeros: Boolean,
         isDarkTheme: Boolean,
-        addSetsIfNotVisible: Boolean
+        addSetsIfNotVisible: Boolean,
+        checkValueVisibility: Boolean
     ): Boolean {
-        if (super.build(context, chart, csvData, ignoreZeros, isDarkTheme, addSetsIfNotVisible = false)) {
+        if (super.build(context, chart, csvData, ignoreZeros, isDarkTheme,
+                addSetsIfNotVisible = false, checkValueVisibility)) {
 
             //axisLeft.axisMinimum = 0f
             chart.axisRight.isEnabled = true

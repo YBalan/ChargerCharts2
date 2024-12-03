@@ -14,7 +14,6 @@ import java.time.format.ResolverStyle
 import com.example.chargercharts2.models.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
 import java.time.LocalDateTime
 import java.time.format.DateTimeParseException
 import java.util.Timer
@@ -43,6 +42,9 @@ object UdpListener {
 
     private val _message = MutableLiveData<String>()
     val message: LiveData<String> get() = _message
+
+    private val _lastDateTime = MutableLiveData<String>()
+    val lastDateTime: LiveData<String> get() = _lastDateTime
 
     private val _messages = MutableLiveData<List<String>>()
     val messages: LiveData<List<String>> get() = _messages
@@ -141,8 +143,9 @@ object UdpListener {
                     val addEntry = CsvDataValue(dateTime, voltageFloat, relayFloat)
                     dataList.add(addEntry)
 
-                    _addedEntry.postValue(addEntry)
                     _dataSets.postValue(dataMap)
+                    _addedEntry.postValue(addEntry)
+                    _lastDateTime.postValue(dateTime.format(dateTimeFormatter))
                 }
             } catch (e: Exception) {
                 Log.e("UdpListener", "Error receiving UDP packet", e)
