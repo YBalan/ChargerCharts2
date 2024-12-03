@@ -103,7 +103,16 @@
 			app:layout_constraintBottom_toBottomOf="@+id/lineChart"
 			app:layout_constraintEnd_toEndOf="parent"
 			app:layout_constraintStart_toStartOf="parent"
-			app:layout_constraintTop_toTopOf="parent" >
+			app:layout_constraintTop_toTopOf="parent" >		
+			
+			<TextView
+				android:id="@+id/lastDateTimeLabel"
+				android:layout_width="wrap_content"
+				android:layout_height="wrap_content"
+				android:layout_marginStart="8dp"				
+				android:text="Last Updated: --:--"		
+				android:gravity="end"				
+				android:textSize="16sp" />
 			
 			<!-- CheckBox for ignoreZeros data set -->
 			<CheckBox
@@ -113,9 +122,11 @@
 				android:text="'0'"
 				android:layout_marginStart="0dp"
 				android:checked="true" 
-				android:tag="ignoreZeroCheckBox" />
+				android:tag="ignoreZeroCheckBox" />	
 			
 		</LinearLayout>
+		
+		
 
 	</LinearLayout>
 		

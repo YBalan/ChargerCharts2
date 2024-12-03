@@ -14,6 +14,7 @@ import android.widget.CheckBox
 import com.example.chargercharts2.R
 import com.example.chargercharts2.utils.*
 import android.widget.LinearLayout
+import androidx.core.view.allViews
 import androidx.core.view.children
 import androidx.fragment.app.activityViewModels
 import com.example.chargercharts2.BuildConfig.IS_DEBUG_BUILD
@@ -72,8 +73,8 @@ class HomeFragment : Fragment() {
 
     private fun clearCheckBoxes() {
         binding.checkBoxContainer.children.filter { view ->
-            Log.i("clearCheckBoxes", view.tag.toString())
-            view.tag.toString().startsWith(CHECK_BOX_ID)
+            Log.i("clearCheckBoxes", "${view.tag?.toString()}")
+            view.tag?.toString()?.startsWith(CHECK_BOX_ID) == true
         }.toList().forEach { chkBox ->
             Log.i("clearCheckBoxes", "${(chkBox as? CheckBox)?.text}")
             binding.checkBoxContainer.removeView(chkBox)
@@ -116,6 +117,20 @@ class HomeFragment : Fragment() {
                 binding.lineChart.data = null
             }
         })
+
+        homeViewModel.lastDateTime.observe(viewLifecycleOwner){
+            //binding.lastDateTimeLabel.text = it
+        }
+
+        homeViewModel.addedEntry.observe(viewLifecycleOwner){
+            updateLastDateTimeLabel(it)
+        }
+    }
+
+    private fun updateLastDateTimeLabel(value: CsvDataValue? = null) {
+        val lastEntry = binding.lineChart.moveToLast()
+        binding.lastDateTimeLabel.text =
+            (lastEntry?.data as? CsvDataValue)?.toString() ?: value?.dateTime?.toString() ?: "Last Update"
     }
 
     private fun plotCsvChart(dataSets: Map<String, List<CsvDataValue>>?, ignoreZeros: Boolean) {
@@ -211,6 +226,7 @@ class HomeFragment : Fragment() {
             csvData.voltageVisible = isChecked
             binding.lineChart.hideHighlight()
             plotCsvChart(homeViewModel.dataSets.value, isIgnoreZeros)
+            updateLastDateTimeLabel()
             invalidateChart()
         }
     }

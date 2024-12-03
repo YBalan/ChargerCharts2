@@ -75,7 +75,7 @@
             android:layout_height="wrap_content"
             android:text="'0'"
             android:layout_marginStart="8dp"
-            android:checked="true" />
+            android:checked="true" />		
     </LinearLayout>
 
     <!-- LineChart for displaying CSV data -->
