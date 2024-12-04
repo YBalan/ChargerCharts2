@@ -14,7 +14,6 @@ import android.widget.CheckBox
 import com.example.chargercharts2.R
 import com.example.chargercharts2.utils.*
 import android.widget.LinearLayout
-import androidx.core.view.allViews
 import androidx.core.view.children
 import androidx.fragment.app.activityViewModels
 import com.example.chargercharts2.BuildConfig.IS_DEBUG_BUILD
@@ -24,6 +23,7 @@ import com.example.chargercharts2.models.CsvData
 import com.example.chargercharts2.models.CsvDataValue
 
 private const val CHECK_BOX_ID = "checkBoxId_"
+private const val OTHER_CHECK_BOX_ID = "other_"
 
 class HomeFragment : Fragment() {
     private var _binding: FragmentHomeBinding? = null
@@ -71,10 +71,10 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun clearCheckBoxes() {
+    private fun clearCheckBoxes(prefix: String = "") {
         binding.checkBoxContainer.children.filter { view ->
             Log.i("clearCheckBoxes", "${view.tag?.toString()}")
-            view.tag?.toString()?.startsWith(CHECK_BOX_ID) == true
+            view.tag?.toString()?.startsWith(CHECK_BOX_ID + prefix) == true
         }.toList().forEach { chkBox ->
             Log.i("clearCheckBoxes", "${(chkBox as? CheckBox)?.text}")
             binding.checkBoxContainer.removeView(chkBox)
@@ -142,11 +142,13 @@ class HomeFragment : Fragment() {
             val showRelay = visibleCount == 1
             val showCycles = visibleCount == 1
             dataSets?.toList()?.forEachIndexed { idxForColor, (name, data) ->
-                val csvData = csvDataMap.getOrPut(name) { CsvData() }
+                val csvData = csvDataMap.getOrPut(name) { CsvData(relayVisible = false, cyclesVisible = false) }
                 val isVisible = csvData.voltageVisible
 
                 csvData.clear()
+                csvData.source = name
                 data.toList().forEach { csvValue ->
+                    csvValue.source = name
                     csvData.addValue(csvValue)
                 }
 
@@ -162,12 +164,9 @@ class HomeFragment : Fragment() {
                 csvData.voltageColor = colorSchema.voltageColor
                 csvData.voltageLabel = name
 
-                if (LifeTimeChartBuilder().build(
-                        context, chart, csvData, ignoreZeros, isDarkTheme(),
-                        addSetsIfNotVisible = true
-                    )
-                ) {
-                    addCheckbox(name, csvData.voltageVisible, csvData.voltageColor, csvData)
+                if (LifeTimeChartBuilder().build(context, chart, csvData, ignoreZeros, isDarkTheme())) {
+                    addCheckbox(name, csvData.voltageVisible, csvData.voltageColor, csvData/*,
+                        addOtherCheckboxes = isVisible && showRelay*/)
                 } else {
                     csvDataMap.remove(name)
                     removeCheckBox(name)
@@ -210,7 +209,14 @@ class HomeFragment : Fragment() {
         updateControls()
     }
 
-    private fun addCheckbox(text: String, isChecked: Boolean, color: Int, csvData: CsvData) {
+    private fun addCheckbox(text: String, isChecked: Boolean, color: Int, csvData: CsvData, addOtherCheckboxes: Boolean = false) {
+        fun invalidateChartInternal() {
+            binding.lineChart.hideHighlight()
+            plotCsvChart(homeViewModel.dataSets.value, isIgnoreZeros)
+            updateLastDateTimeLabel()
+            invalidateChart()
+        }
+
         var checkBox = binding.checkBoxContainer.findViewById<CheckBox>(getCheckBoxId(text))
         if (checkBox == null) {
             checkBox = CheckBox(context).apply {
@@ -224,15 +230,42 @@ class HomeFragment : Fragment() {
         }
         checkBox.setOnCheckedChangeListener { _, isChecked ->
             csvData.voltageVisible = isChecked
-            binding.lineChart.hideHighlight()
-            plotCsvChart(homeViewModel.dataSets.value, isIgnoreZeros)
-            updateLastDateTimeLabel()
-            invalidateChart()
+            invalidateChartInternal()
+        }
+
+        if(addOtherCheckboxes) {
+            val relayCheckBox = CheckBox(context).apply {
+                id = getCheckBoxId(csvData.relayLabel, OTHER_CHECK_BOX_ID)
+                this.text = csvData.relayLabel
+                this.isChecked = csvData.relayVisible
+                tag = getCheckBoxIdStr(csvData.relayLabel, OTHER_CHECK_BOX_ID)
+                buttonTintList = ColorStateList.valueOf(csvData.relayColor)
+                setOnCheckedChangeListener { _, isChecked ->
+                    csvData.relayVisible = isChecked
+                    invalidateChartInternal()
+                }
+            }
+            binding.checkBoxContainer.addView(relayCheckBox)
+
+            val cyclesCheckBox = CheckBox(context).apply {
+                id = getCheckBoxId(csvData.cyclesLabel, OTHER_CHECK_BOX_ID)
+                this.text = csvData.cyclesLabel
+                this.isChecked = csvData.cyclesVisible
+                tag = getCheckBoxIdStr(csvData.cyclesLabel, OTHER_CHECK_BOX_ID)
+                buttonTintList = ColorStateList.valueOf(csvData.cyclesColor)
+                setOnCheckedChangeListener { _, isChecked ->
+                    csvData.cyclesVisible = isChecked
+                    invalidateChartInternal()
+                }
+            }
+            binding.checkBoxContainer.addView(cyclesCheckBox)
+        }else {
+            clearCheckBoxes(OTHER_CHECK_BOX_ID)
         }
     }
 
-    private fun getCheckBoxId(text: String): Int = getCheckBoxIdStr(text).hashCode()
-    private fun getCheckBoxIdStr(text: String): String = "$CHECK_BOX_ID$text"
+    private fun getCheckBoxId(text: String, prefix: String = ""): Int = getCheckBoxIdStr(text, prefix).hashCode()
+    private fun getCheckBoxIdStr(text: String, prefix: String = ""): String = "$CHECK_BOX_ID$prefix$text"
 
     private fun removeCheckBox(text: String) {
         binding.checkBoxContainer.findViewById<CheckBox>(getCheckBoxId(text))?.let {

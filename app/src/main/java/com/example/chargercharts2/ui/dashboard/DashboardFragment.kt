@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
+import android.net.Uri
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -19,7 +20,7 @@ import androidx.fragment.app.activityViewModels
 import com.example.chargercharts2.chartbuilders.HistoryChartBuilder
 import com.example.chargercharts2.databinding.FragmentDashboardBinding // Adjust with actual binding class
 import com.example.chargercharts2.models.CsvData
-import com.example.chargercharts2.utils.getFileExtensionFromUri
+import com.example.chargercharts2.utils.getFileExtension
 import com.example.chargercharts2.utils.hideHighlight
 import com.example.chargercharts2.utils.isDarkTheme
 import com.example.chargercharts2.utils.isLandscape
@@ -86,14 +87,6 @@ class DashboardFragment : Fragment() {
         updateControls(isChartView = !viewModel.isEmpty())
     }
 
-    private fun openFilePicker() {
-        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
-            type = "*/*"
-            addCategory(Intent.CATEGORY_OPENABLE)
-        }
-        filePickerLauncher.launch(intent)
-    }
-
     private fun setupBackButton() {
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -106,24 +99,52 @@ class DashboardFragment : Fragment() {
         })
     }
 
+    private fun openFilePicker() {
+        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+            type = "*/*"
+            addCategory(Intent.CATEGORY_OPENABLE)
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        }
+        filePickerLauncher.launch(intent)
+    }
+
     private val filePickerLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
             if (result.resultCode == Activity.RESULT_OK) {
-                result.data?.data?.let { uri ->
-                    val ext = getFileExtensionFromUri(context, uri)
-                    Log.i("filePickerLauncher", "$uri; path: ${uri.path}; ext: $ext")
-                    if (ext?.lowercase() != "csv") {
-                        Toast.makeText(context, "Selected file is not *.csv", Toast.LENGTH_SHORT).show()
-                        return@let
+                val uris: MutableList<Uri> = mutableListOf()
+                result.data?.data?.let{ uris.add(it) }
+
+                val clipData = result?.data?.clipData
+                if(clipData != null){
+                    for (i in 0 until clipData.itemCount) {
+                        val uri = clipData.getItemAt(i).uri
+                        if(validateUri(uri)){
+                            uris.add(uri)
+                        }
                     }
-                    if (!viewModel.parseCsvFile(requireContext(), uri, _isLongPressed)) {
-                        binding.lineChart.data = null
-                        binding.lineChart.invalidate()
-                        Toast.makeText(context, "No data available", Toast.LENGTH_SHORT).show()
-                    }
-                } ?: Toast.makeText(context, "File selection error", Toast.LENGTH_SHORT).show()
+                }
+
+                if(uris.isEmpty())
+                    Toast.makeText(context, "File selection error", Toast.LENGTH_SHORT).show()
+                if (!viewModel.parseCsvFile(requireContext(), uris, _isLongPressed)) {
+                    binding.lineChart.data = null
+                    binding.lineChart.invalidate()
+                    Toast.makeText(context, "No data available", Toast.LENGTH_SHORT).show()
+                }
             }
         }
+
+    private fun validateUri(uri: Uri, showToast: Boolean = false): Boolean {
+        val ext = uri.getFileExtension(context)
+        Log.i("filePickerLauncher", "$uri; path: ${uri.path}; ext: $ext")
+        if (ext?.lowercase() != "csv") {
+            if( showToast) {
+                Toast.makeText(context, "${uri.path} - Selected file is not *.csv",  Toast.LENGTH_SHORT).show()
+            }
+            return false
+        }
+        return true
+    }
 
     private fun plotCsvChart(csvData: CsvData?, ignoreZeros: Boolean) : Boolean {
         if (csvData == null || csvData.values.isEmpty()) return false

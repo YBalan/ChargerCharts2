@@ -1,6 +1,5 @@
 package com.example.chargercharts2.ui.home
 
-import android.R
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModel
 import com.example.chargercharts2.models.CsvData

@@ -13,23 +13,23 @@ fun getLocalIpAddress(): String {
         ?.hostAddress ?: "Unknown"
 }
 
-fun getFileNameFromUri(context: Context?, uri: Uri): String? {
+fun Uri?.getFileName(context: Context?): String? {
     var fileName: String? = null
-    if (uri.scheme == "content") {
-        val cursor: Cursor? = context?.contentResolver?.query(uri, null, null, null, null)
+    if (this?.scheme == "content") {
+        val cursor: Cursor? = context?.contentResolver?.query(this, null, null, null, null)
         cursor?.use {
             val nameIndex = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
             if (nameIndex != -1 && it.moveToFirst()) {
                 fileName = it.getString(nameIndex)
             }
         }
-    } else if (uri.scheme == "file") {
-        fileName = uri.lastPathSegment
+    } else if (this?.scheme == "file") {
+        fileName = this.lastPathSegment
     }
     return fileName
 }
 
-fun getFileExtensionFromUri(context: Context?, uri: Uri): String? {
-    val fileName = getFileNameFromUri(context, uri)
+fun Uri?.getFileExtension(context: Context?): String? {
+    val fileName = this.getFileName(context)
     return fileName?.substringAfterLast(".", "")
 }
