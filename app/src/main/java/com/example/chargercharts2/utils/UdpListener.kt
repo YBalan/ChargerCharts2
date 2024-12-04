@@ -262,7 +262,7 @@ object UdpListener {
                 val voltage3 = random.nextInt(16, 24).toFloat()
                 val name3 = "ChargerCharts|16.5V|"
 
-                val voltage4 = random.nextInt(-1, 10).toFloat()
+                val voltage4 = random.nextInt(0, 10).toFloat()
                 val name4 = "ChargerCharts|8.0V|"
 
                 // Create a message to send

@@ -4,10 +4,12 @@ import android.content.Context
 import android.graphics.Color
 import android.net.Uri
 import android.util.Log
+import com.example.chargercharts2.utils.getFileName
 import com.opencsv.CSVReader
 import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.time.Duration
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
@@ -32,7 +34,8 @@ data class CsvDataValue(
     val relay: Float,
     var cycle: Cycle? = null,
     var relayDuration: DateTimeRange? = null,
-    var visible: Boolean = false
+    var visible: Boolean = false,
+    var source: String? = null,
 ){
     fun setCycle(cycle: Cycle?, csvData: CsvData){
         this.cycle = cycle
@@ -49,6 +52,7 @@ data class CsvDataValue(
             val dtFormatter = DateTimeFormatter.ofPattern(CsvData.DATE_TIME_TOOLTIP_FORMAT)
             return (data as? CsvDataValue)?.let {
                 (if(dataSetName.isNullOrEmpty()) "" else dataSetName + "\n") +
+                (if(it.source.isNullOrEmpty()) "" else it.source + "\n") +
                 "Date: ${dtFormatter.format(it.dateTime)}"+
                 "\nVoltage: ${it.voltage}"+
                 "\nRelay: ${if(it.relay == 0f) "Off" else "On"}" +
@@ -109,6 +113,8 @@ data class CsvData(
     var cyclesVisible: Boolean = false,
     var cyclesColor: Int = Color.RED,
     var cycleVOffset: Float = 0.2f,
+
+    var source: String = "",
 ) {
     fun clear(){
         minV = 0.0f
@@ -158,6 +164,7 @@ data class CsvData(
     fun addValue(csvValue: CsvDataValue){
         maxV = if(maxV < csvValue.voltage) csvValue.voltage else maxV
         minV = if(minV == 0.0f || minV > csvValue.voltage) csvValue.voltage else minV
+
         values.add(csvValue)
     }
 
@@ -168,8 +175,39 @@ data class CsvData(
         const val DATE_TIME_CSV_FORMAT: String = "uuuu-MM-dd HH:mm:ss"
         const val DATE_TIME_TOOLTIP_FORMAT: String = "HH:mm:ss MM-dd-yy"
 
-        fun parseCsvFile(context: Context, uri: Uri): CsvData {
+        fun parseCsvFiles(context: Context, uris: List<Uri?>): CsvData {
             val csvData = CsvData()
+            csvData.source = if(uris.count() > 1) getMultiSourceName(context, uris) else uris.firstOrNull().getFileName(context) ?: "N/A"
+            uris.forEach{uri ->
+                parseCsvFile(context, uri, fillValueSource = uris.count() > 1).values.forEach { csvValue ->
+                    csvData.addValue(csvValue)
+                }
+            }
+            return csvData
+        }
+
+        data class FileInfo(val key: String, val name: String, val dt: String)
+        private fun getMultiSourceName(context: Context, uris: List<Uri?>): String {
+            val grouped = uris.mapNotNull { uri ->
+                uri.getFileName(context)?.let { fileName ->
+                    val dt = fileName.substringAfter('_').split("(", ".")[0]
+                    val source = fileName.substringBefore('_')
+                    FileInfo(source.lowercase(), source, dt)
+                }
+            }.groupBy { it.key }
+
+            val dateTimes = grouped.flatMap { gr ->
+                gr.value.filter { i -> i.dt.isNotEmpty() }.map { it.dt }
+            }
+            var dts = if (dateTimes.isNotEmpty()) "_${dateTimes.min()}_${dateTimes.max()}" else ""
+            dts = if(dateTimes.count() == 1) "_${dateTimes.min()}" else dts
+            return grouped.map { it.value.first().name }.joinToString(", ") + dts
+        }
+
+        fun parseCsvFile(context: Context, uri: Uri?, fillValueSource: Boolean): CsvData {
+            val csvData = CsvData()
+            if(uri == null) return csvData
+            csvData.source = uri.getFileName(context).toString()
 
             val rows = try {
                 // Open input stream from the content resolver
@@ -219,7 +257,7 @@ data class CsvData(
                     val relay = row[2].trim().toFloat()
 
                     // Add to the result list
-                    csvData.addValue(CsvDataValue(dateTime, voltage, relay))
+                    csvData.addValue(CsvDataValue(dateTime, voltage, relay, source = if(fillValueSource) csvData.source else null))
                 } catch (e: NumberFormatException) {
                     Log.e("parseCsvFile", "RowIndex: $rowIndex text: '$dateTimeString'")
                     // Handle parsing errors for value1 or value2
