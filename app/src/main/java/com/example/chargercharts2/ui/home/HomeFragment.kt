@@ -88,6 +88,7 @@ class HomeFragment : Fragment() {
         })
 
         binding.ignoreZeroCheckBox.setOnCheckedChangeListener { _, isChecked ->
+            binding.lineChart.data = null
             binding.lineChart.hideHighlight()
             plotCsvChart(homeViewModel.dataSets.value, !isChecked)
             invalidateChart()
@@ -115,6 +116,7 @@ class HomeFragment : Fragment() {
                 binding.portTextField.isEnabled = true
                 binding.limitTextField.isEnabled = true
                 binding.lineChart.data = null
+                binding.lineChart.hideHighlight()
             }
         })
 
@@ -211,6 +213,7 @@ class HomeFragment : Fragment() {
 
     private fun addCheckbox(text: String, isChecked: Boolean, color: Int, csvData: CsvData, addOtherCheckboxes: Boolean = false) {
         fun invalidateChartInternal() {
+            binding.lineChart.data = null
             binding.lineChart.hideHighlight()
             plotCsvChart(homeViewModel.dataSets.value, isIgnoreZeros)
             updateLastDateTimeLabel()
