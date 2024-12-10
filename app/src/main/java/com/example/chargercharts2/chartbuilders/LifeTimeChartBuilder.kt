@@ -15,7 +15,7 @@ class LifeTimeChartBuilder : ChartBuilderBase() {
         addSetsIfNotVisible: Boolean,
         checkValueVisibility: Boolean
     ): Boolean {
-        if (super.build(context, chart, csvData, ignoreZeros, isDarkTheme,
+        if (super.buildOld(context, chart, csvData, ignoreZeros, isDarkTheme,
                 addSetsIfNotVisible = false, checkValueVisibility)) {
 
             //axisLeft.axisMinimum = 0f
