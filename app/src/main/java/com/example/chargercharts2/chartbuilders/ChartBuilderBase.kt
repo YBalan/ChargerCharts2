@@ -41,7 +41,7 @@ open class ChartBuilderBase {
     fun addValue(context: Context?, chart: LineChart, csvData: CsvData, csvDataValue: CsvDataValue, ignoreZeros: Boolean,
                  checkValueVisibility: Boolean, addSetsIfNotVisible: Boolean): Boolean{
         fun getLabel(value: String?, csvDataValue: CsvDataValue): String{
-            return "$value${if(csvDataValue.source == null) "" else csvDataValue.source}"
+            return "$value${if(csvDataValue.source == null) "" else csvDataValue.source?.substringBefore('_')}"
         }
 
         if (!ignoreZeros || csvDataValue.voltage > 0f) {

@@ -100,8 +100,9 @@ data class CsvData(
 
         fun parseCsvFiles(context: Context, uris: List<Uri?>, isDarkTheme: Boolean): CsvData {
             val csvData = CsvData()
-            csvData.source = if(uris.count() > 1) getMultiSourceName(context, uris) else uris.firstOrNull().getFileName(context) ?: "N/A"
-            uris.forEachIndexed{ index, uri ->
+            var sortedUris = mutableListOf<Uri?>()
+            csvData.source = getMultiSourceName(context, uris, sortedUris)
+            sortedUris.forEachIndexed{ index, uri ->
                 parseCsvFile(context, uri, fillValueSource = uris.count() > 1).values.forEach { csvValue ->
                     csvData.addValue(csvValue.withColorSchema(getColorSchema(index, isDarkTheme)))
                 }
@@ -109,22 +110,23 @@ data class CsvData(
             return csvData
         }
 
-        data class FileInfo(val key: String, val name: String, val dt: String)
-        private fun getMultiSourceName(context: Context, uris: List<Uri?>): String {
+        data class FileInfo(val key: String, val name: String, val dt: String, val fullSourceName: String, val uri: Uri?)
+        private fun getMultiSourceName(context: Context, uris: List<Uri?>, sortedUris: MutableList<Uri?>): String? {
             val grouped = uris.mapNotNull { uri ->
                 uri.getFileName(context)?.let { fileName ->
-                    val dt = fileName.substringAfter('_').split("(", ".")[0]
+                    val dt = fileName.substringAfter('_').split("(", ".", "_")[0]
                     val source = fileName.substringBefore('_')
-                    FileInfo(source.lowercase(), source, dt)
+                    FileInfo(source.lowercase(), source, dt, fileName, uri)
                 }
             }.groupBy { it.key }
 
             val dateTimes = grouped.flatMap { gr ->
                 gr.value.filter { i -> i.dt.isNotEmpty() }.map { it.dt }
             }.distinct()
-            var dts = if (dateTimes.isNotEmpty()) "_${dateTimes.min()}_${dateTimes.max()}" else ""
+            var dts = if (dateTimes.isNotEmpty()) " ${dateTimes.min()}_${dateTimes.max()}" else ""
             dts = if(dateTimes.count() == 1) " ${dateTimes.min()}" else dts
-            return grouped.map { it.value.first().name }.joinToString(", ") + dts
+            sortedUris.addAll(grouped.flatMap { gr-> gr.value }.sortedBy { v->v.dt }.map{ v->v.uri })
+            return if(uris.count() > 1) grouped.map { it.value.first().name }.joinToString(", ") + dts else grouped.values.firstOrNull()?.firstOrNull()?.fullSourceName
         }
 
         fun parseCsvFile(context: Context, uri: Uri?, fillValueSource: Boolean): CsvData {

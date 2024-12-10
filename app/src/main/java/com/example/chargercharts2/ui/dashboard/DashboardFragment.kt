@@ -151,9 +151,10 @@ class DashboardFragment : Fragment() {
     private fun plotCsvChart(csvData: CsvData?, ignoreZeros: Boolean) : Boolean {
         if (csvData == null || csvData.values.isEmpty()) return false
 
+        binding.lineChart.data = null
         binding.lineChart.hideHighlight()
         if(HistoryChartBuilder().build(context, binding.lineChart, csvData, ignoreZeros, isDarkTheme(),
-            checkValueVisibility = _isLongPressed)){
+            checkValueVisibility = false)){
             updateControls(isChartView = true)
             setCheckBoxColorFromDataSet(binding.voltageCheckBox, csvData.voltageLabel)
             setCheckBoxColorFromDataSet(binding.relayCheckBox, csvData.relayLabel)
