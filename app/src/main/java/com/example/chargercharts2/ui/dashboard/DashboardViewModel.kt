@@ -39,8 +39,8 @@ class DashboardViewModel : ViewModel() {
         if(timeLapsInterval > timeLapsIntervalMax) timeLapsInterval = timeLapsIntervalMax
     }
 
-    fun parseCsvFile(context: Context, uris: List<Uri?>, showTimeLaps: Boolean) : Boolean {
-        val csvData = CsvData.parseCsvFiles(context, uris)
+    fun parseCsvFile(context: Context, uris: List<Uri?>, showTimeLaps: Boolean, isDarkTheme: Boolean) : Boolean {
+        val csvData = CsvData.parseCsvFiles(context, uris, isDarkTheme)
         val isFilled = !csvData.values.isEmpty()
         if(isFilled){
             val source = csvData.source
@@ -49,7 +49,7 @@ class DashboardViewModel : ViewModel() {
                 DetectCycles.analyzeSimple(csvData, windowSize = 3, ignoreZeros = true)
                 startTimeLaps(csvData)
             }else {
-                _fileName.postValue(source)
+                _fileName.postValue("$source")
                 DetectCycles.analyzeSimple(csvData, windowSize = 3, ignoreZeros = true)
                 _csvChartData.postValue(csvData)
             }
@@ -61,12 +61,14 @@ class DashboardViewModel : ViewModel() {
     fun startTimeLaps(csvData: CsvData){
         _csvChartData.postValue(CsvData(csvData.maxV, csvData.minV, mutableListOf(csvData.values[0]), cyclesVisible = true))
         timeLapsJob = CoroutineScope(Dispatchers.Main).launch {
+            _csvChartData.postValue(CsvData().addValue(csvData.values.firstOrNull()))
             csvData.values.drop(1).forEach{ csvDataValue ->
                 csvDataValue.visible = true
                 _addedEntry.postValue(csvDataValue)
                 _fileName.postValue("(${timeLapsInterval}ms.) ${csvData.source}")
                 delay(timeLapsInterval)
             }
+            _csvChartData.postValue(csvData)
         }
     }
 

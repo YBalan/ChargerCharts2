@@ -148,7 +148,7 @@ class HomeFragment : Fragment() {
                 csvData.clear()
                 csvData.source = name
                 data.toList().forEach { csvValue ->
-                    csvValue.source = name
+                    //csvValue.source = name
                     csvData.addValue(csvValue)
                 }
 

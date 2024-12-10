@@ -4,95 +4,15 @@ import android.content.Context
 import android.graphics.Color
 import android.net.Uri
 import android.util.Log
+import com.example.chargercharts2.utils.getColorSchema
 import com.example.chargercharts2.utils.getFileName
 import com.opencsv.CSVReader
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import java.time.Duration
-import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 import java.time.format.ResolverStyle
-
-enum class CycleType
-{
-    Unknown,
-    Charging,
-    Discharging,
-    Floating,
-}
-
-data class DateTimeRange(var start: LocalDateTime, var end: LocalDateTime? = null){
-    val duration: Duration
-        get() = Duration.between(start, end ?: start)
-}
-
-data class CsvDataValue(
-    val dateTime: LocalDateTime,
-    val voltage: Float,
-    val relay: Float,
-    var cycle: Cycle? = null,
-    var relayDuration: DateTimeRange? = null,
-    var visible: Boolean = false,
-    var source: String? = null,
-){
-    fun setCycle(cycle: Cycle?, csvData: CsvData){
-        this.cycle = cycle
-        if(cycle != null)
-            this.cycle?.value = csvData.getValueForCycle(cycle.type)
-    }
-
-    override fun toString() : String{
-        return "${DateTimeFormatter.ofPattern(CsvData.DATE_TIME_CSV_VALUE_FORMAT).format(dateTime)} [${"%.1f".format(voltage)}V]"
-    }
-
-    companion object {
-        fun highlightValueFormatter(data: Any?, dataSetName: String?): String? {
-            val dtFormatter = DateTimeFormatter.ofPattern(CsvData.DATE_TIME_TOOLTIP_FORMAT)
-            return (data as? CsvDataValue)?.let {
-                (if(dataSetName.isNullOrEmpty()) "" else dataSetName + "\n") +
-                (if(it.source.isNullOrEmpty()) "" else it.source + "\n") +
-                "Date: ${dtFormatter.format(it.dateTime)}"+
-                "\nVoltage: ${it.voltage}"+
-                "\nRelay: ${if(it.relay == 0f) "Off" else "On"}" +
-                (if(it.relayDuration != null) " (${it.relayDuration?.duration.toString(false, true)})" else "")+
-                (if(it.cycle != null) "\nCycle: ${it.cycle?.type}" else "") +
-                (if(it.cycle?.duration != null) "\nDuration: ${it.cycle?.duration.toString(false, false)}" else "")
-            }
-        }
-
-        fun Duration?.toString(showSeconds: Boolean, showDays: Boolean): String {
-            if (this == null || this == Duration.ZERO) return "N/A"
-
-            val days = this.toDays()
-            val hours = if(showDays) this.toHours() % 24 else this.toHours()
-            val minutes = this.toMinutes() % 60
-            val seconds = this.seconds % 60
-
-            return buildString {
-                if (showDays && days > 0) append("$days day${if (days > 1) "s" else ""} ")
-                append("%02d:".format(hours))
-                append("%02d".format(minutes))
-                if (showSeconds || minutes == 0L) {
-                    append(":%02ds".format(seconds))
-                }
-            }.trim()
-        }
-    }
-}
-
-data class Cycle(
-    val start: LocalDateTime,
-    var end: LocalDateTime? = null,
-    val type: CycleType = CycleType.Unknown,
-){
-    var value: Float? = null
-    var avgValue: Float = 0f
-    var medValue: Float = 0f
-    val duration: Duration
-        get() = Duration.between(start, end ?: start)
-}
 
 data class CsvData(
     var maxV: Float = 0.0f,
@@ -114,7 +34,7 @@ data class CsvData(
     var cyclesColor: Int = Color.RED,
     var cycleVOffset: Float = 0.2f,
 
-    var source: String = "",
+    var source: String? = null,
 ) {
     fun clear(){
         minV = 0.0f
@@ -161,11 +81,14 @@ data class CsvData(
         return if (minV - cycleVOffset < 0f) 0f else minV - cycleVOffset
     }
 
-    fun addValue(csvValue: CsvDataValue){
-        maxV = if(maxV < csvValue.voltage) csvValue.voltage else maxV
-        minV = if(minV == 0.0f || minV > csvValue.voltage) csvValue.voltage else minV
+    fun addValue(csvValue: CsvDataValue?): CsvData{
+        if(csvValue != null){
+            maxV = if(maxV < csvValue.voltage) csvValue.voltage else maxV
+            minV = if(minV == 0.0f || minV > csvValue.voltage) csvValue.voltage else minV
 
-        values.add(csvValue)
+            values.add(csvValue)
+        }
+        return this
     }
 
     companion object {
@@ -175,12 +98,12 @@ data class CsvData(
         const val DATE_TIME_CSV_FORMAT: String = "uuuu-MM-dd HH:mm:ss"
         const val DATE_TIME_TOOLTIP_FORMAT: String = "HH:mm:ss MM-dd-yy"
 
-        fun parseCsvFiles(context: Context, uris: List<Uri?>): CsvData {
+        fun parseCsvFiles(context: Context, uris: List<Uri?>, isDarkTheme: Boolean): CsvData {
             val csvData = CsvData()
             csvData.source = if(uris.count() > 1) getMultiSourceName(context, uris) else uris.firstOrNull().getFileName(context) ?: "N/A"
-            uris.forEach{uri ->
+            uris.forEachIndexed{ index, uri ->
                 parseCsvFile(context, uri, fillValueSource = uris.count() > 1).values.forEach { csvValue ->
-                    csvData.addValue(csvValue)
+                    csvData.addValue(csvValue.withColorSchema(getColorSchema(index, isDarkTheme)))
                 }
             }
             return csvData
@@ -198,9 +121,9 @@ data class CsvData(
 
             val dateTimes = grouped.flatMap { gr ->
                 gr.value.filter { i -> i.dt.isNotEmpty() }.map { it.dt }
-            }
+            }.distinct()
             var dts = if (dateTimes.isNotEmpty()) "_${dateTimes.min()}_${dateTimes.max()}" else ""
-            dts = if(dateTimes.count() == 1) "_${dateTimes.min()}" else dts
+            dts = if(dateTimes.count() == 1) " ${dateTimes.min()}" else dts
             return grouped.map { it.value.first().name }.joinToString(", ") + dts
         }
 
@@ -267,6 +190,7 @@ data class CsvData(
                 rowIndex++
             }
 
+            Log.i("parseCsvFile", "CsvData: min: ${csvData.minV} max: ${csvData.maxV}")
             return csvData
         }
 

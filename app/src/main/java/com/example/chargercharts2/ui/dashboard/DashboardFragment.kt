@@ -31,7 +31,6 @@ class DashboardFragment : Fragment() {
     private var _binding: FragmentDashboardBinding? = null
     private val binding get() = _binding!!
     private val viewModel: DashboardViewModel by activityViewModels()
-    val isIgnoreZeros: Boolean get() = !binding.ignoreZeroCheckBox.isChecked
     private var _isLongPressed = false
 
     override fun onCreateView(
@@ -60,13 +59,14 @@ class DashboardFragment : Fragment() {
         }
 
         viewModel.csvChartData.observe(viewLifecycleOwner) { csvData ->
-            updateControls(plotCsvChart(csvData, isIgnoreZeros))
+            updateControls(plotCsvChart(csvData, !binding.ignoreZeroCheckBox.isChecked))
         }
 
         viewModel.addedEntry.observe(viewLifecycleOwner){ csvDataValue ->
             HistoryChartBuilder().addValue(context, binding.lineChart,
-                viewModel.csvChartData.value ?: CsvData(), csvDataValue, ignoreZeros = true, checkValueVisibility = true)
-            binding.lineChart.invalidate()
+                viewModel.csvChartData.value ?: CsvData(), csvDataValue,
+                ignoreZeros = !binding.ignoreZeroCheckBox.isChecked, checkValueVisibility = true, addSetsIfNotVisible = true)
+            invalidateChart()
         }
 
         viewModel.fileName.observe(viewLifecycleOwner){ fileName ->
@@ -75,9 +75,10 @@ class DashboardFragment : Fragment() {
 
         binding.ignoreZeroCheckBox.setOnCheckedChangeListener { _, isChecked ->
             binding.lineChart.hideHighlight()
-            if(!_isLongPressed){
-                plotCsvChart(viewModel.csvChartData.value, !isChecked)}
-            binding.lineChart.invalidate()
+            //if(!_isLongPressed){
+                plotCsvChart(viewModel.csvChartData.value, !isChecked)
+            //}
+            invalidateChart()
         }
     }
 
@@ -94,6 +95,7 @@ class DashboardFragment : Fragment() {
                 _isLongPressed = false
                 viewModel.clear()
                 viewModel.stopTimeLaps()
+                binding.lineChart.data = null
                 updateControls(isChartView = false)
             }
         })
@@ -126,9 +128,9 @@ class DashboardFragment : Fragment() {
 
                 if(uris.isEmpty())
                     Toast.makeText(context, "File selection error", Toast.LENGTH_SHORT).show()
-                if (!viewModel.parseCsvFile(requireContext(), uris, _isLongPressed)) {
+                if (!viewModel.parseCsvFile(requireContext(), uris, _isLongPressed, isDarkTheme())) {
                     binding.lineChart.data = null
-                    binding.lineChart.invalidate()
+                    invalidateChart()
                     Toast.makeText(context, "No data available", Toast.LENGTH_SHORT).show()
                 }
             }
@@ -185,22 +187,31 @@ class DashboardFragment : Fragment() {
                 csvData.cyclesVisible = isChecked
             }
 
+            invalidateChart()
             return true
         }
         return false
     }
 
-    private fun toggleChartDataSetVisibility(label: String, isVisible: Boolean) {
+    private fun toggleChartDataSetVisibility(label: String, isVisible: Boolean, ignoreCase: Boolean = true) {
         // Find the dataset by label and set its visibility
-        val dataSet = binding.lineChart.data?.getDataSetByLabel(label, true)
-        Log.i("toggleChartDataSetVisibility","label: $label; IsVisible: $isVisible; dataSet: ${dataSet != null}")
+        val dataSet = binding.lineChart.data?.getDataSetByLabel(label, ignoreCase)
+        Log.i("toggleChartDataSetVisibility", "label: $label; IsVisible: $isVisible; dataSet: ${dataSet != null}")
         dataSet?.isVisible = isVisible
-        binding.lineChart.invalidate() // Refresh chart to apply changes
+        binding.lineChart.data.dataSets.filter { ds ->
+            ds.label.startsWith(label, ignoreCase)
+        }.forEach { ds ->
+            ds.isVisible = isVisible
+        }
+        invalidateChart()
     }
 
-    private fun setCheckBoxColorFromDataSet(checkBox: CheckBox, label: String){
+    private fun setCheckBoxColorFromDataSet(checkBox: CheckBox, label: String, ignoreCase: Boolean = true) {
         val dataSet = binding.lineChart.data?.getDataSetByLabel(label, true)
-        checkBox.buttonTintList = ColorStateList.valueOf(dataSet?.color ?: Color.YELLOW)
+        val color = dataSet?.color ?: binding.lineChart.data?.dataSets?.firstOrNull { ds ->
+            ds.label.startsWith(label, ignoreCase)
+        }?.color ?: Color.YELLOW
+        checkBox.buttonTintList = ColorStateList.valueOf(color)
     }
 
     private fun updateControls(isChartView: Boolean) {
@@ -215,6 +226,13 @@ class DashboardFragment : Fragment() {
         else{
             updateViewMarginBottom(binding.lineChart, 80, context)
         }
+    }
+
+    private fun invalidateChart() {
+        Log.i("DashboardFragment", "invalidateChart")
+        binding.lineChart.data?.notifyDataChanged()
+        binding.lineChart.notifyDataSetChanged()
+        binding.lineChart.invalidate()
     }
 
     override fun onDestroyView() {
