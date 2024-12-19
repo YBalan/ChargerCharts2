@@ -11,7 +11,7 @@ android {
         applicationId = "com.example.chargercharts2"
         minSdk = 26
         targetSdk = 34
-        versionCode = 15
+        versionCode = 16
         versionName = "1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -81,4 +81,7 @@ dependencies {
 
     // OpenCSV dependency for parsing CSV files
     implementation(libs.opencsv)
+
+    implementation ("com.github.kittinunf.fuel:fuel:2.1.0")
+    implementation ("com.github.kittinunf.fuel:fuel-android:2.1.0")
 }

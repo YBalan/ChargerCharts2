@@ -1,5 +1,6 @@
 package com.example.chargercharts2.ui.home
 
+import android.content.Intent
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.os.Bundle
@@ -16,6 +17,8 @@ import com.example.chargercharts2.utils.*
 import android.widget.LinearLayout
 import androidx.core.view.children
 import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.OnLifecycleEvent
 import com.example.chargercharts2.BuildConfig.IS_DEBUG_BUILD
 import com.example.chargercharts2.analytics.DetectCycles
 import com.example.chargercharts2.chartbuilders.LifeTimeChartBuilder
@@ -192,6 +195,7 @@ class HomeFragment : Fragment() {
         binding.lineChart.invalidate()
     }
 
+    private var intent: Intent? = null
     private fun setupSettingsAndApplyButton() {
         //binding.portTextField.setText(UdpListener.DEFAULT_PORT)
         //binding.limitTextField.setText(UdpListener.DEFAULT_DATA_LIMIT)
@@ -199,8 +203,10 @@ class HomeFragment : Fragment() {
         binding.applyButton.setOnClickListener {
             val port = binding.portTextField.text.toString().toIntOrNull() ?: UdpListener.port
             val dataLimit = binding.limitTextField.text.toString().toIntOrNull() ?: 0
-            UdpListener.initialize(port, dataLimit)
+            //UdpListener.initialize(port, dataLimit)
+            intent = toggleUdpService(port, dataLimit, showErrors = true)
             UdpListener.clear()
+
             homeViewModel.clear()
             clearCheckBoxes()
             plotCsvChart(homeViewModel.dataSets.value, isIgnoreZeros)
@@ -277,6 +283,7 @@ class HomeFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        Log.i("HomeFragment", "onDestroyView")
         super.onDestroyView()
         _binding = null
     }
